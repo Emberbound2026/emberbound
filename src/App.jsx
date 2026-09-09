@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { fetchTitle, fetchCatalog } from './data/supabaseClient.js';
+import { fetchTitle, fetchCatalog, fetchInProgressTitleIds } from './data/supabaseClient.js';
 import { useAuth } from './engine/useAuth.js';
 import { useReadingProgress } from './engine/useReadingProgress.js';
 import { useStoryEngine } from './engine/useStoryEngine.js';
@@ -14,48 +14,62 @@ import { LandingPage } from './components/LandingPage.jsx';
 import { AccountUpgrade } from './components/AccountUpgrade.jsx';
 import './styles/app.css';
 
-const TITLE_ID = 'ember-court';
-
 export default function App() {
   const { user, loading: authLoading, isAnonymous } = useAuth();
-  const { initialProgress, saveProgress } = useReadingProgress(user?.id, TITLE_ID);
-  const purchase = usePurchase(user?.id, TITLE_ID);
 
-  // Skip the landing page entirely if we're returning from Stripe —
-  // the reader was mid-story when they left, they shouldn't be dumped
-  // back at the front door after paying.
-  const [view, setView] = useState(() => {
+  // Which title (if any) is selected. Reading straight from the URL on
+  // first load means a Stripe redirect (?checkout=success&title=...)
+  // drops the reader back into the right book, not the landing page.
+  const [selectedTitleId, setSelectedTitleId] = useState(() => {
     const params = new URLSearchParams(window.location.search);
-    return params.get('checkout') ? 'reader' : 'landing';
+    return params.get('title') || null;
   });
 
-  const [catalogEntry, setCatalogEntry] = useState(null);
+  const [catalog, setCatalog] = useState(null);
+  const [inProgressIds, setInProgressIds] = useState(new Set());
   const [titleData, setTitleData] = useState(null);
   const [loadError, setLoadError] = useState(null);
 
-  // Landing page only needs the lightweight catalog row, not the full
-  // story text — keeps the first paint fast.
+  // Landing page needs the lightweight catalog list, not full story text.
   useEffect(() => {
     let cancelled = false;
     fetchCatalog()
-      .then((rows) => { if (!cancelled) setCatalogEntry(rows.find((r) => r.id === TITLE_ID) || null); })
+      .then((rows) => { if (!cancelled) setCatalog(rows); })
       .catch((err) => { if (!cancelled) setLoadError(err); });
     return () => { cancelled = true; };
   }, []);
 
-  // The full story (all node text) only loads once we actually enter
-  // the reader — either the user clicked Start/Continue, or we're
-  // resuming straight from a Stripe redirect.
   useEffect(() => {
-    if (view !== 'reader' || titleData) return;
+    if (!user?.id) return;
     let cancelled = false;
-    fetchTitle(TITLE_ID)
+    fetchInProgressTitleIds(user.id)
+      .then((ids) => { if (!cancelled) setInProgressIds(ids); })
+      .catch((err) => console.error('Failed to load progress list:', err.message));
+    return () => { cancelled = true; };
+  }, [user?.id]);
+
+  // Full story text only loads once a title is actually selected.
+  useEffect(() => {
+    if (!selectedTitleId) { setTitleData(null); return; }
+    let cancelled = false;
+    fetchTitle(selectedTitleId)
       .then((data) => { if (!cancelled) setTitleData(data); })
       .catch((err) => { if (!cancelled) setLoadError(err); });
     return () => { cancelled = true; };
-  }, [view, titleData]);
+  }, [selectedTitleId]);
 
-  const resumeReady = initialProgress !== undefined;
+  const { initialProgress, saveProgress } = useReadingProgress(user?.id, selectedTitleId);
+  const purchase = usePurchase(user?.id, selectedTitleId);
+
+  const handleBackToLanding = useCallback(() => {
+    setSelectedTitleId(null);
+    setTitleData(null);
+    // Refresh so a just-finished/just-started title's Start/Continue
+    // label is correct if the reader picks a title again this session.
+    if (user?.id) {
+      fetchInProgressTitleIds(user.id).then(setInProgressIds).catch(() => {});
+    }
+  }, [user?.id]);
 
   if (loadError) {
     return (
@@ -70,8 +84,8 @@ export default function App() {
     );
   }
 
-  if (view === 'landing') {
-    if (!catalogEntry || authLoading || !resumeReady) {
+  if (!selectedTitleId) {
+    if (!catalog || authLoading) {
       return (
         <div className="book">
           <div className="page"><p className="story-text">Loading…</p></div>
@@ -80,14 +94,14 @@ export default function App() {
     }
     return (
       <LandingPage
-        title={catalogEntry}
-        hasProgress={!!initialProgress}
-        onStart={() => setView('reader')}
+        titles={catalog}
+        inProgressIds={inProgressIds}
+        onSelect={setSelectedTitleId}
       />
     );
   }
 
-  // view === 'reader'
+  const resumeReady = initialProgress !== undefined;
   if (!titleData || authLoading || !resumeReady || purchase.isUnlocked === undefined) {
     return (
       <div className="book">
@@ -104,7 +118,7 @@ export default function App() {
       onProgressChange={saveProgress}
       purchase={purchase}
       isAnonymous={isAnonymous}
-      onBackToLanding={() => setView('landing')}
+      onBackToLanding={handleBackToLanding}
     />
   );
 }

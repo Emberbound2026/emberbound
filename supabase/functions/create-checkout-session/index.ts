@@ -68,8 +68,8 @@ Deno.serve(async (req) => {
     // metadata is how the webhook (which has no idea who clicked what)
     // finds out which user bought which title.
     metadata: { user_id: user.id, title_id: title.id },
-    success_url: `${siteUrl}/?checkout=success`,
-    cancel_url: `${siteUrl}/?checkout=cancelled`,
+    success_url: `${siteUrl}/?checkout=success&title=${title.id}`,
+    cancel_url: `${siteUrl}/?checkout=cancelled&title=${title.id}`,
   });
 
   return new Response(JSON.stringify({ url: session.url }), {

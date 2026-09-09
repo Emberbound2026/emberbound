@@ -47,3 +47,18 @@ export async function fetchCatalog() {
   if (error) throw error;
   return data;
 }
+
+/**
+ * Returns the set of title_ids this user has any saved progress on —
+ * used purely to decide whether a catalog card says "Start Reading" or
+ * "Continue Reading". A Set, not a map, since we only need membership.
+ */
+export async function fetchInProgressTitleIds(userId) {
+  if (!userId) return new Set();
+  const { data, error } = await supabase
+    .from('reading_progress')
+    .select('title_id')
+    .eq('user_id', userId);
+  if (error) throw error;
+  return new Set(data.map((row) => row.title_id));
+}

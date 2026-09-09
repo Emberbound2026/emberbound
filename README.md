@@ -224,6 +224,47 @@ actually redirect back to your app instead of erroring:
 5. Reload the app in the *same* browser — should still resume correctly
    (proves the user id, and everything keyed to it, didn't change)
 
+### Multi-title catalog (this session)
+
+The app no longer hardcodes a single title — `App.jsx` reads a real
+catalog from Supabase, the landing page lists every published title,
+and each has independent progress, paywall state, and purchase status.
+
+**The Binding Oath** is the second title, following the exact same
+proven structure as Ember Court: free through Chapter 3, locked from
+Chapter 4, 4 endings gated by the same guarded/trust flag mechanic.
+Nothing about the engine, paywall, or narration needed to change for
+this — that's the payoff of building it generically the first time.
+
+**To add any future title**, the only two things needed:
+1. A new `src/data/stories/<title-id>.js` file matching the
+   `{ startNode, nodes }` shape (copy `binding-oath.js` as a template)
+2. Register it in the `titles` array at the top of `supabase/seed.js`
+
+Then `node supabase/seed.js` — it appears in the catalog automatically.
+
+**Re-run the seed to add Binding Oath to your existing database:**
+```
+node supabase/seed.js
+```
+Should print two lines now — one per title.
+
+**One thing to redeploy** — the checkout function now passes the title
+through the Stripe redirect (needed now that there's more than one
+title to return to):
+```
+supabase functions deploy create-checkout-session
+```
+
+**To verify:**
+1. `npm run dev` — landing page should show *two* title cards
+2. Start The Binding Oath, click through to Chapter 4, confirm the
+   paywall appears
+3. Unlock it with the Stripe test card — confirm it redirects back to
+   *this* title specifically, unlocked, not Ember Court
+4. Go back to the landing page — both titles should independently show
+   "Continue Reading" if you have progress on each
+
 ### Deploy to Vercel
 
 1. Push this project to a GitHub repo.

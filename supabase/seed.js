@@ -1,17 +1,18 @@
-// Run once, after the schema is applied and your .env has the Supabase
-// credentials: `node supabase/seed.js`
+// Run once, after the schema is applied and your .env.local has the
+// Supabase credentials: `node supabase/seed.js`
 //
-// This is intentionally a plain Node script, not part of the app bundle —
-// it's a migration tool, not something that runs at request time.
+// Re-running this is safe (upserts) — use it whenever you add a new
+// title or edit existing story content.
 
 import { createClient } from '@supabase/supabase-js';
 import dotenv from 'dotenv';
 import { emberCourt } from '../src/data/stories/ember-court.js';
+import { bindingOath } from '../src/data/stories/binding-oath.js';
 
 dotenv.config({ path: '.env.local' });
 
 const supabaseUrl = process.env.VITE_SUPABASE_URL;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY; // NOT the anon key — this needs write access, run locally only, never ship this key to the client
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 if (!supabaseUrl || !supabaseServiceKey) {
   console.error('Set VITE_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY (service role, not anon) before running.');
   process.exit(1);
@@ -19,33 +20,55 @@ if (!supabaseUrl || !supabaseServiceKey) {
 
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-async function seed() {
-  const { error: titleError } = await supabase.from('titles').upsert({
+// Add any new title here — this is the only place a new title needs to
+// be registered for seeding. Everything else (engine, paywall, landing
+// page catalog) reads from the database, not from this list.
+const titles = [
+  {
     id: 'ember-court',
     name: 'The Ember Court',
-    tagline: 'A branching romantasy — choose how the story unfolds.',
-    heat_level: 'fade-to-black',
-    start_node: emberCourt.startNode,
+    tagline: 'A former lover, now bound to a dying fae court, calls in a debt neither of you understood the weight of.',
     price_cents: 299,
-    is_published: true,
-  });
-  if (titleError) throw titleError;
+    story: emberCourt,
+  },
+  {
+    id: 'binding-oath',
+    name: 'The Binding Oath',
+    tagline: 'A rogue mage and the dragon-blooded knight hunting her are magically bound together — neither can go further than a mile from the other.',
+    price_cents: 299,
+    story: bindingOath,
+  },
+];
 
-  const nodeRows = Object.entries(emberCourt.nodes).map(([nodeId, node]) => ({
-    title_id: 'ember-court',
-    node_id: nodeId,
-    chapter: node.chapter || null,
-    text: node.text,
-    is_ending: !!node.ending,
-    is_locked: !!node.locked,
-    ending_tag: node.tag || null,
-    choices: node.choices || [],
-  }));
+async function seed() {
+  for (const title of titles) {
+    const { error: titleError } = await supabase.from('titles').upsert({
+      id: title.id,
+      name: title.name,
+      tagline: title.tagline,
+      heat_level: 'fade-to-black',
+      start_node: title.story.startNode,
+      price_cents: title.price_cents,
+      is_published: true,
+    });
+    if (titleError) throw titleError;
 
-  const { error: nodesError } = await supabase.from('nodes').upsert(nodeRows);
-  if (nodesError) throw nodesError;
+    const nodeRows = Object.entries(title.story.nodes).map(([nodeId, node]) => ({
+      title_id: title.id,
+      node_id: nodeId,
+      chapter: node.chapter || null,
+      text: node.text,
+      is_ending: !!node.ending,
+      is_locked: !!node.locked,
+      ending_tag: node.tag || null,
+      choices: node.choices || [],
+    }));
 
-  console.log(`Seeded 1 title and ${nodeRows.length} nodes.`);
+    const { error: nodesError } = await supabase.from('nodes').upsert(nodeRows);
+    if (nodesError) throw nodesError;
+
+    console.log(`Seeded "${title.name}" — ${nodeRows.length} nodes.`);
+  }
 }
 
 seed().catch((err) => {
