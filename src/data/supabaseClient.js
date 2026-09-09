@@ -30,6 +30,7 @@ export async function fetchTitle(titleId) {
       chapter: row.chapter,
       text: row.text,
       ending: row.is_ending,
+      locked: row.is_locked,
       tag: row.ending_tag,
       choices: row.choices,
     };

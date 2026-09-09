@@ -37,6 +37,7 @@ async function seed() {
     chapter: node.chapter || null,
     text: node.text,
     is_ending: !!node.ending,
+    is_locked: !!node.locked,
     ending_tag: node.tag || null,
     choices: node.choices || [],
   }));

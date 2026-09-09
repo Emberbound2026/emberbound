@@ -85,6 +85,112 @@ Then open the local URL Vite prints (usually http://localhost:5173).
    worked (check the Supabase Table Editor — `titles` should have 1 row,
    `nodes` should have 14).
 
+### Live data, accounts, and resume progress (this session)
+
+`App.jsx` now fetches from Supabase instead of a hardcoded file, and every
+reader gets a silent anonymous account so their progress can be saved and
+resumed — no login screen, no signup friction, just reading.
+
+**One required dashboard step:** anonymous sign-in is off by default.
+- Supabase dashboard → **Authentication** → **Sign In / Providers**
+- Find **Anonymous Sign-Ins** → toggle it **on**
+
+Without this, `useAuth` will fail silently on `signInAnonymously()` and
+nothing will save.
+
+**To verify it's working:**
+1. `npm run dev`, open the app, click through a couple of choices
+2. Supabase dashboard → **Table Editor** → `auth.users` — you should see
+   a new row (anonymous, no email) appear
+3. **Table Editor** → `reading_progress` — should show a row with your
+   `current_node_id` updating as you click through (there's an ~800ms
+   save delay by design, so it won't update instantly on every click)
+4. Refresh the browser tab entirely — you should land back where you
+   left off, not at Chapter One
+
+**Known gap, not yet built:** there's no way for a reader to turn their
+anonymous session into a real account (email/password or magic link) —
+which matters once purchases exist, since an anonymous session can be
+lost (cleared cookies, new device) and take a paid unlock with it. This
+is real Week 2/3 scope, not an oversight — flagging it so it doesn't get
+forgotten once the paywall goes in.
+
+### Paywall setup (Stripe + Edge Functions)
+
+Free through the end of Chapter 3 (the binding scene) — everything from
+Chapter 4 onward, plus all four endings, is locked until purchase. The
+gate is enforced server-side: the client only ever *reads* the
+`purchases` table, it never writes to it — the Stripe webhook is the
+only thing allowed to record a purchase, so there's no way to spoof an
+unlock from the browser.
+
+**One UX note vs. the earlier mockup:** the paywall now appears as its
+own full screen right after a Chapter 3 choice, rather than overlaid
+with blurred choice buttons on the Chapter 3 screen itself — simpler
+and more robust to build correctly. Worth revisiting later if the
+blurred-preview version tests better once you have real readers.
+
+**1. Run the migration** (your DB already exists from Week 1, so this is
+an addition, not the full schema again):
+- Supabase → SQL Editor → paste and run `supabase/migrations/002_paywall.sql`
+
+**2. Re-run the seed** so the `locked` flags reach the database:
+```
+node supabase/seed.js
+```
+
+**3. Create a Stripe account** at stripe.com if you don't have one.
+Stay in **Test mode** (toggle, top right of the Stripe dashboard) until
+you're ready to take real payments — test mode uses fake card numbers,
+zero real money moves.
+
+**4. Get your Stripe secret key**
+- Stripe dashboard → **Developers** → **API keys**
+- Copy the **Secret key** (starts `sk_test_...` in test mode)
+
+**5. Install the Supabase CLI** (needed to deploy Edge Functions —
+different from the `supabase-js` npm package already in this project):
+- Windows: `scoop install supabase` (install Scoop first from scoop.sh if you don't have it)
+- Mac: `brew install supabase/tap/supabase`
+
+**6. Link the CLI to your project**
+```
+supabase login
+supabase link --project-ref <your-project-ref>
+```
+(Project ref is the part before `.supabase.co` in your project URL.)
+
+**7. Set the function secrets** (these stay server-side, never in `.env.local`):
+```
+supabase secrets set STRIPE_SECRET_KEY=sk_test_...
+supabase secrets set SITE_URL=https://emberbound.vercel.app
+```
+(`STRIPE_WEBHOOK_SECRET` comes in step 9, after Stripe gives it to you.)
+
+**8. Deploy both functions**
+```
+supabase functions deploy create-checkout-session
+supabase functions deploy stripe-webhook
+```
+This prints each function's URL — you'll need the `stripe-webhook` one next.
+
+**9. Create the Stripe webhook**
+- Stripe dashboard → **Developers** → **Webhooks** → **Add endpoint**
+- Endpoint URL: the `stripe-webhook` URL from step 8
+- Select event: **checkout.session.completed**
+- Save, then copy the **Signing secret** shown (starts `whsec_...`)
+```
+supabase secrets set STRIPE_WEBHOOK_SECRET=whsec_...
+```
+
+**10. Test it end-to-end**
+- Run the app, click through to Chapter 4 — paywall should appear
+- Click **Unlock this book** → redirects to Stripe Checkout
+- Use Stripe's test card: `4242 4242 4242 4242`, any future expiry, any CVC
+- Should redirect back and unlock within a few seconds (polling covers
+  the brief gap while the webhook processes)
+- Supabase Table Editor → `purchases` → should show a new row
+
 ### Deploy to Vercel
 
 1. Push this project to a GitHub repo.

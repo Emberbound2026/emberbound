@@ -26,6 +26,7 @@ create table nodes (
   chapter text,
   text text not null,
   is_ending boolean default false,
+  is_locked boolean default false,  -- true = behind the paywall
   ending_tag text,
   choices jsonb default '[]',       -- [{ label, next, setFlag?, branchOn? }]
   primary key (title_id, node_id)

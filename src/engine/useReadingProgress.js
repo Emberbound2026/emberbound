@@ -1,11 +1,8 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../data/supabaseClient.js';
-
-const SAVE_DEBOUNCE_MS = 800;
 
 export function useReadingProgress(userId, titleId) {
   const [initialProgress, setInitialProgress] = useState(undefined);
-  const debounceRef = useRef(null);
 
   useEffect(() => {
     if (!userId || !titleId) return;
@@ -28,22 +25,19 @@ export function useReadingProgress(userId, titleId) {
 
   const saveProgress = useCallback((currentNodeId, flags, pathTaken) => {
     if (!userId || !titleId) return;
-    if (debounceRef.current) clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(() => {
-      supabase
-        .from('reading_progress')
-        .upsert({
-          user_id: userId,
-          title_id: titleId,
-          current_node_id: currentNodeId,
-          flags,
-          path_taken: pathTaken,
-          updated_at: new Date().toISOString(),
-        })
-        .then(({ error }) => {
-          if (error) console.error('Failed to save progress:', error.message);
-        });
-    }, SAVE_DEBOUNCE_MS);
+    supabase
+      .from('reading_progress')
+      .upsert({
+        user_id: userId,
+        title_id: titleId,
+        current_node_id: currentNodeId,
+        flags,
+        path_taken: pathTaken,
+        updated_at: new Date().toISOString(),
+      })
+      .then(({ error }) => {
+        if (error) console.error('Failed to save progress:', error.message);
+      });
   }, [userId, titleId]);
 
   return { initialProgress, saveProgress };

@@ -139,6 +139,7 @@ His thumb moves once, absently, over the back of your hand. Neither of you lets 
     },
 
     n4a: {
+      locked: true,
       chapter: "Four — Guarded",
       text: `You pull your hand back. It costs more than it should.
 
@@ -162,6 +163,7 @@ He doesn't try to close the distance again. You almost wish he would.`,
     },
 
     n4b: {
+      locked: true,
       chapter: "Four — Undone",
       text: `You don't pull back.
 
@@ -193,6 +195,7 @@ What happens next belongs to the two of you and no one else — the ritual chamb
     },
 
     n5: {
+      locked: true,
       chapter: "Five — The Deeper Truth",
       text: `He leads you down through the court's oldest halls, past wards that flicker like dying candles, to a chamber where the water starts — the true source of why the court is drowning, in every sense of the word.
 
@@ -216,6 +219,7 @@ The water in the chamber churns, restless, reflecting torchlight in patterns tha
     },
 
     n5_pressed: {
+      locked: true,
       chapter: "Five — What This Means",
       text: `Before he leads you anywhere, you stop him. "Before we go further — what does this actually mean? The binding. Us. I'm not walking into another decision half-informed."
 
@@ -239,6 +243,7 @@ He leads you down through the court's oldest halls, past wards that flicker like
     },
 
     n6_final_hold: {
+      locked: true,
       chapter: "Six — What You're Willing to Risk",
       text: `"What's necessary," you say, "is that the wards hold and the court survives. That's what's true. The rest is not relevant to winning this fight."
 
@@ -252,6 +257,7 @@ He studies you for a long moment, and something in his face — the cautious hop
     },
 
     n6_surrender: {
+      locked: true,
       chapter: "Six — Surrender",
       text: `"The truth," you say, "is that I've spent three years lying to myself, not to you. I told myself I left because I didn't feel anything. I left because I felt too much, and I didn't know what to do with a hunter who was supposed to end things like you, not love them."
 
@@ -273,6 +279,7 @@ Later — much later, torches burned to embers, the court quiet and whole around
     },
 
     n6_reckoning: {
+      locked: true,
       chapter: "Six — Reckoning",
       text: `"What's true," you say, "is that I came back because some part of me never fully left. I'm not going to pretend that's nothing. But I'm also not going to pretend it's simple."
 
@@ -296,6 +303,7 @@ It isn't the ending where everything is resolved in a single night. It's the one
     },
 
     n6_severance: {
+      locked: true,
       chapter: "Six — Severance",
       text: `Standing at the water's edge, hands joined, you say only what's necessary. The wards flare — and falter.
 
@@ -319,6 +327,7 @@ The debt is paid. The ember, carefully, deliberately, is left to go out on its o
     },
 
     n6_unbound: {
+      locked: true,
       chapter: "Six — Unbound",
       text: `"No," you say, and the word surprises you with how steady it comes out. "I'm not standing here and pretending to be certain of something I'm not, not even to save a court. Not even this one."
 
