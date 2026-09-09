@@ -435,6 +435,34 @@ ending," confirm the image generates correctly (check cover art shows,
 text is legible, no layout overlap) either via the share sheet or the
 downloaded file.
 
+### Restart bug fix — applies to all 5 books (this session)
+
+**Bug:** clicking "Read again" from an ending would briefly reset to
+Chapter 1, then immediately snap back to whatever chapter had been
+saved from *before* that reading session (e.g. Chapter 4).
+
+**Root cause:** a safety-net effect in `useStoryEngine` exists to catch
+a narrow timing case — saved progress arriving from Supabase *after*
+the component's first render. Its guard was "resume hasn't happened yet,
+AND the choice-path is currently empty." But `restart()` also empties
+the choice-path — that's how it resets to Chapter 1 — so calling
+restart looked identical to that timing edge case and incorrectly
+re-triggered a resume from the old saved position.
+
+Fixed two ways: `hasResumed` now correctly initializes to `true`
+whenever there was real saved progress at mount (previously it
+incorrectly stayed `false` through ordinary reading, only becoming
+`true` via that narrow effect path), and a separate `hasRestartedRef`
+permanently blocks the resume safety-net from firing again after any
+explicit restart, regardless of state timing.
+
+This lives in the shared engine every title runs on, so it's fixed for
+all five books at once — nothing book-specific needed.
+
+**To verify:** get any title to Chapter 4+ so there's real saved
+progress, reach an ending, click "Read again, choose differently" —
+should land on Chapter 1 and stay there.
+
 ### Deploy to Vercel
 
 1. Push this project to a GitHub repo.

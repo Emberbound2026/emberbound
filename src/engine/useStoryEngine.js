@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 
 /**
  * Drives a branching story from its data (see data/stories/ember-court.js
@@ -15,12 +15,28 @@ export function useStoryEngine(story, resumeFrom, onChange) {
   const [flags, setFlags] = useState(resumeFrom?.flags || {});
   const [pathTaken, setPathTaken] = useState(resumeFrom?.path_taken || []);
 
+  // Was resumeFrom already applied by the useState initializers above?
+  // If resumeFrom existed at mount, yes — nothing left for the effect
+  // below to do. This must reflect that correctly from the start:
+  // leaving it permanently `false` here (the previous bug) meant the
+  // "did we resume yet" check below could never actually become true
+  // through normal reading, only through the narrow async-race case it
+  // was designed for — which meant ANY future reset of pathTaken to
+  // empty (including a manual restart) looked identical to that race
+  // condition and incorrectly re-triggered a resume.
+  const [hasResumed, setHasResumed] = useState(() => !!resumeFrom);
+
+  // Belt-and-braces: once the reader has explicitly restarted, the
+  // resume safety-net below must never fire again this session, full
+  // stop — regardless of any state-timing subtlety in hasResumed.
+  const hasRestartedRef = useRef(false);
+
   // If resumeFrom arrives *after* first render (it's loaded async from
   // Supabase), apply it once — but only if the reader hasn't already
-  // started clicking through on the fresh state in the meantime.
-  const [hasResumed, setHasResumed] = useState(false);
+  // started clicking through on the fresh state in the meantime, and
+  // never after an explicit restart.
   useEffect(() => {
-    if (resumeFrom && !hasResumed && pathTaken.length === 0) {
+    if (resumeFrom && !hasResumed && !hasRestartedRef.current && pathTaken.length === 0) {
       setCurrentNodeId(resumeFrom.current_node_id);
       setFlags(resumeFrom.flags || {});
       setPathTaken(resumeFrom.path_taken || []);
@@ -49,6 +65,7 @@ export function useStoryEngine(story, resumeFrom, onChange) {
   }, [flags]);
 
   const restart = useCallback(() => {
+    hasRestartedRef.current = true;
     setFlags({});
     setPathTaken([]);
     setCurrentNodeId(story.startNode);
