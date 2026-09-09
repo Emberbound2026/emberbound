@@ -10,7 +10,7 @@ import { useVoiceChoice } from './engine/useVoiceChoice.js';
 import { usePurchase } from './engine/usePurchase.js';
 import { ChapterView } from './components/ChapterView.jsx';
 import { ChoiceList } from './components/ChoiceList.jsx';
-import { ShareEnding } from './components/ShareEnding.jsx';
+import { EndingModal } from './components/EndingModal.jsx';
 import { NarratorBar } from './components/NarratorBar.jsx';
 import { Paywall } from './components/Paywall.jsx';
 import { LandingPage } from './components/LandingPage.jsx';
@@ -289,10 +289,10 @@ function StoryReader({ title, story, resumeFrom, onProgressChange, purchase, isA
             <div className="page page-transition" key={currentNode.chapter}>
               <ChapterView node={currentNode} />
               <ChoiceList node={currentNode} onChoose={choose} onRestart={restart} />
-              {currentNode.ending && (
-                <ShareEnding titleId={title.id} titleName={title.name} endingTag={currentNode.tag} />
-              )}
             </div>
+          )}
+          {!isLockedAndUnpaid && currentNode.ending && (
+            <EndingModal titleId={title.id} titleName={title.name} endingTag={currentNode.tag} />
           )}
         </div>
       </div>
