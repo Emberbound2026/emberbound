@@ -265,6 +265,31 @@ supabase functions deploy create-checkout-session
 4. Go back to the landing page — both titles should independently show
    "Continue Reading" if you have progress on each
 
+### Narration UX polish (this session)
+
+Three related fixes:
+
+- **Voice picker is filtered to English-only, alphabetised.** A raw
+  system voice list is often 40+ entries covering every installed
+  language — genuinely unusable as a picker. Nothing here is
+  non-English content, so nothing else was relevant anyway.
+- **Narrator settings are collapsed by default.** The three voice
+  pickers and toggles no longer sit permanently at the top of every
+  chapter — there's a compact play button + one-line summary
+  ("auto-read on · hands-free on") with a "Narration settings" link
+  that expands the full panel when actually needed.
+- **Settings persist across sessions**, via `localStorage`, keyed by
+  voice *name* rather than index — a saved index would point at a
+  different voice next session since the exact list composition and
+  order isn't guaranteed stable across browser restarts. Auto-read,
+  hands-free, and all three voice choices now survive a reload or
+  returning later, instead of resetting to defaults every time.
+
+**Known limitation, unchanged:** this is still per-device/per-browser
+(same reasoning as before — voices themselves are device-specific, so
+this isn't stored in Supabase). A reader switching devices gets fresh
+defaults there, which is expected, not a bug.
+
 ### Deploy to Vercel
 
 1. Push this project to a GitHub repo.

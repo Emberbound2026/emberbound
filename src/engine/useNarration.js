@@ -2,10 +2,6 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 
 const synth = typeof window !== 'undefined' ? window.speechSynthesis : null;
 
-function populateDefault(list, chosenIndex) {
-  return chosenIndex >= 0 ? chosenIndex : 0;
-}
-
 /**
  * Splits a chapter's text into narrator / her / his segments by pulling out
  * quoted dialogue and guessing the speaker from nearby pronouns.
@@ -63,11 +59,21 @@ export function useNarration() {
   useEffect(() => {
     if (!synth) return;
     const load = () => {
-      const list = synth.getVoices();
-      if (!list.length) return;
+      const rawList = synth.getVoices();
+      if (!rawList.length) return;
+
+      // English-only, alphabetised — a raw system voice list is often
+      // 40+ entries (every installed language), which makes for an
+      // unusable picker. Content is English-only, so nothing else is
+      // relevant here. Falls back to the full list only on the rare
+      // device with no English voices at all.
+      const englishOnly = rawList.filter((v) => v.lang && v.lang.toLowerCase().startsWith('en'));
+      const list = (englishOnly.length ? englishOnly : rawList)
+        .slice()
+        .sort((a, b) => a.name.localeCompare(b.name));
       setVoices(list);
 
-      const enVoices = list.map((v, i) => ({ v, i })).filter((o) => o.v.lang?.startsWith('en'));
+      const enVoices = list.map((v, i) => ({ v, i }));
       const gbVoices = enVoices.filter((o) => o.v.lang === 'en-GB');
       const findFirst = (arr, pattern, exclude) => arr.find((o) => pattern.test(o.v.name) && o.i !== exclude);
 
@@ -77,9 +83,9 @@ export function useNarration() {
       const her = findFirst(enVoices, /female|samantha|serena|karen|victoria|susan|zira|fiona/i, narrator.i)
         || enVoices.find((o) => o.i !== narrator.i && o.i !== his.i) || enVoices[0] || narrator;
 
-      setNarratorVoice(populateDefault(list, narrator.i));
-      setHisVoice(populateDefault(list, his.i));
-      setHerVoice(populateDefault(list, her.i));
+      setNarratorVoice(narrator.i >= 0 ? narrator.i : 0);
+      setHisVoice(his.i >= 0 ? his.i : 0);
+      setHerVoice(her.i >= 0 ? her.i : 0);
     };
     load();
     synth.onvoiceschanged = load;

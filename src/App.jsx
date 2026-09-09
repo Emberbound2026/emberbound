@@ -4,6 +4,7 @@ import { useAuth } from './engine/useAuth.js';
 import { useReadingProgress } from './engine/useReadingProgress.js';
 import { useStoryEngine } from './engine/useStoryEngine.js';
 import { useNarration } from './engine/useNarration.js';
+import { useNarratorSettings } from './engine/useNarratorSettings.js';
 import { useVoiceChoice } from './engine/useVoiceChoice.js';
 import { usePurchase } from './engine/usePurchase.js';
 import { ChapterView } from './components/ChapterView.jsx';
@@ -127,11 +128,71 @@ function StoryReader({ title, story, resumeFrom, onProgressChange, purchase, isA
   const { currentNode, choose, restart } = useStoryEngine(story, resumeFrom, onProgressChange);
   const narration = useNarration();
   const voiceChoice = useVoiceChoice();
+  const [savedSettings, updateSavedSettings] = useNarratorSettings();
 
-  const [autoRead, setAutoRead] = useState(false);
-  const [handsFree, setHandsFree] = useState(false);
+  // Restore auto-read/hands-free immediately from storage — these are
+  // simple booleans, no need to wait for anything else to load first.
+  const [autoRead, setAutoReadRaw] = useState(() => savedSettings.autoRead ?? false);
+  const [handsFree, setHandsFreeRaw] = useState(() => savedSettings.handsFree ?? false);
+
+  const setAutoRead = useCallback((value) => {
+    setAutoReadRaw(value);
+    updateSavedSettings({ autoRead: value });
+  }, [updateSavedSettings]);
+
+  const setHandsFree = useCallback((value) => {
+    setHandsFreeRaw(value);
+    updateSavedSettings({ handsFree: value });
+  }, [updateSavedSettings]);
+
   const handsFreeRef = useRef(handsFree);
   useEffect(() => { handsFreeRef.current = handsFree; }, [handsFree]);
+
+  // Once the voice list actually loads, resolve any saved voice
+  // *names* back to indices in this session's list. Only runs once
+  // (guarded by hasRestoredVoices) so it doesn't fight with the user
+  // manually picking a different voice afterward.
+  const hasRestoredVoicesRef = useRef(false);
+  useEffect(() => {
+    if (hasRestoredVoicesRef.current || narration.voices.length === 0) return;
+    hasRestoredVoicesRef.current = true;
+
+    const findByName = (name) => narration.voices.findIndex((v) => v.name === name);
+    if (savedSettings.narratorVoiceName) {
+      const i = findByName(savedSettings.narratorVoiceName);
+      if (i >= 0) narration.setNarratorVoice(i);
+    }
+    if (savedSettings.herVoiceName) {
+      const i = findByName(savedSettings.herVoiceName);
+      if (i >= 0) narration.setHerVoice(i);
+    }
+    if (savedSettings.hisVoiceName) {
+      const i = findByName(savedSettings.hisVoiceName);
+      if (i >= 0) narration.setHisVoice(i);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [narration.voices]);
+
+  // Save voice choices by name whenever they change (after restoration,
+  // so we're not immediately re-saving the defaults over a real
+  // preference during the initial load race).
+  useEffect(() => {
+    if (!hasRestoredVoicesRef.current) return;
+    const name = narration.voices[narration.narratorVoice]?.name;
+    if (name) updateSavedSettings({ narratorVoiceName: name });
+  }, [narration.narratorVoice, narration.voices, updateSavedSettings]);
+
+  useEffect(() => {
+    if (!hasRestoredVoicesRef.current) return;
+    const name = narration.voices[narration.herVoice]?.name;
+    if (name) updateSavedSettings({ herVoiceName: name });
+  }, [narration.herVoice, narration.voices, updateSavedSettings]);
+
+  useEffect(() => {
+    if (!hasRestoredVoicesRef.current) return;
+    const name = narration.voices[narration.hisVoice]?.name;
+    if (name) updateSavedSettings({ hisVoiceName: name });
+  }, [narration.hisVoice, narration.voices, updateSavedSettings]);
 
   const isLockedAndUnpaid = currentNode.locked && !purchase.isUnlocked;
 
