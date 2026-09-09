@@ -8,6 +8,9 @@ import { createClient } from '@supabase/supabase-js';
 import dotenv from 'dotenv';
 import { emberCourt } from '../src/data/stories/ember-court.js';
 import { bindingOath } from '../src/data/stories/binding-oath.js';
+import { saltAndDrowning } from '../src/data/stories/salt-and-drowning.js';
+import { wardensHeir } from '../src/data/stories/wardens-heir.js';
+import { ashbound } from '../src/data/stories/ashbound.js';
 
 dotenv.config({ path: '.env.local' });
 
@@ -37,6 +40,27 @@ const titles = [
     tagline: 'A rogue mage and the dragon-blooded knight hunting her are magically bound together — neither can go further than a mile from the other.',
     price_cents: 299,
     story: bindingOath,
+  },
+  {
+    id: 'salt-and-drowning',
+    name: 'Court of Salt and Drowning',
+    tagline: 'A healer bargains with the exiled prince of a sea-fae court to save her sister — and finds the price is more than she came prepared to pay.',
+    price_cents: 299,
+    story: saltAndDrowning,
+  },
+  {
+    id: 'wardens-heir',
+    name: "The Last Warden's Heir",
+    tagline: 'She inherits a centuries-old bond to the demon her bloodline was founded to guard against — and he isn\u2019t what three hundred years of stories promised.',
+    price_cents: 299,
+    story: wardensHeir,
+  },
+  {
+    id: 'ashbound',
+    name: 'Ashbound',
+    tagline: 'An arranged marriage is the only thing standing between two warring dragon-shifter houses and the war that started it all reigniting.',
+    price_cents: 299,
+    story: ashbound,
   },
 ];
 

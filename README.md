@@ -370,6 +370,46 @@ every stop was silently advancing the saved position past what had
 actually been heard. Fixed by checking `event.error` — only a genuine
 synthesis failure advances the queue now; a cancellation just stops.
 
+### Three new titles + landing page redesign (this session)
+
+**Catalog is now five titles**, all following the same proven diamond
+structure (free through Chapter 3, locked from Chapter 4, 4 endings
+gated by the guarded/trust flag):
+
+- **Court of Salt and Drowning** — a healer bargains with an exiled
+  sea-fae prince to save her sister from the tide's claim
+- **The Last Warden's Heir** — she inherits a centuries-old bond to the
+  demon her bloodline was founded to guard against
+- **Ashbound** — an arranged marriage is the only thing standing
+  between two warring dragon-shifter houses and open war reigniting
+
+Each has its own cover art (generated the same way as the first two,
+same brand palette, distinct motif per story — ripple rings for the sea
+court, a warden's sigil for the last title, facing dragon-wings for
+Ashbound).
+
+**Landing page redesign** — replaced the stacked list of full-width
+cards with a proper app-catalog layout:
+- **Hero banner** at the top (the flagship title's cover art as a
+  full-bleed background with a headline overlay) instead of a small
+  static icon
+- **Horizontal-scroll catalog rows** (the standard mobile-app pattern —
+  App Store, Spotify, Netflix all use this) instead of a long vertical
+  scroll of cards
+- **A separate "Continue Reading" row** appears above "All Stories"
+  whenever the reader has progress on anything, so returning readers
+  see their in-progress titles first without hunting for them
+
+**Re-run the seed** to get all five titles into the database:
+```
+node supabase/seed.js
+```
+Should print five lines now.
+
+**Redeploy the checkout function is NOT needed this time** — no changes
+to that piece. Just seed, then `npm run dev` and confirm the landing
+page shows the new hero + scrollable rows with all five covers.
+
 ### Deploy to Vercel
 
 1. Push this project to a GitHub repo.
