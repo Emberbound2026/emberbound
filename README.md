@@ -410,6 +410,31 @@ Should print five lines now.
 to that piece. Just seed, then `npm run dev` and confirm the landing
 page shows the new hero + scrollable rows with all five covers.
 
+### Shareable endings (this session)
+
+Every ending now has a "Share your ending" button that generates a
+vertical (story-format, 1080×1920) branded image — cover art, the
+title name, and the ending name as the headline — entirely client-side
+via Canvas, no server/image-generation cost involved.
+
+**Sharing behavior:**
+- Where the Web Share API supports sharing files (most mobile
+  browsers, notably iOS Safari), it opens the native share sheet —
+  same "share to Instagram/Messages/etc." flow as any other app
+- Everywhere else (most desktop browsers), it falls back to a plain
+  image download
+
+**One thing worth doing before relying on this for real marketing
+reach:** the footer currently says "emberbound.app" as a placeholder
+— worth replacing with your actual production domain once you have
+one, since that's the whole point of a shareable image driving new
+readers back to the app.
+
+**To verify:** finish any story to an ending, click "Share your
+ending," confirm the image generates correctly (check cover art shows,
+text is legible, no layout overlap) either via the share sheet or the
+downloaded file.
+
 ### Deploy to Vercel
 
 1. Push this project to a GitHub repo.
