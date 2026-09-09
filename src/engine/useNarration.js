@@ -98,27 +98,52 @@ export function useNarration() {
     return { voice: voices[narratorVoice], pitch: 0.85, rate: 0.95 };
   }, [voices, hisVoice, herVoice, narratorVoice]);
 
+  const indexRef = useRef(0);
+  const onSegmentStartRef = useRef(null);
+
   const speakNext = useCallback(() => {
     if (!queueRef.current.length) {
       setIsSpeaking(false);
       if (onQueueEmptyRef.current) onQueueEmptyRef.current();
       return;
     }
+    if (onSegmentStartRef.current) onSegmentStartRef.current(indexRef.current);
     const seg = queueRef.current.shift();
+    indexRef.current += 1;
     const utter = new SpeechSynthesisUtterance(seg.text.replace(/\n+/g, ' ').trim());
     const { voice, pitch, rate } = voiceAndPitchFor(seg.speaker);
     if (voice) utter.voice = voice;
     utter.pitch = pitch;
     utter.rate = rate;
     utter.onend = speakNext;
-    utter.onerror = speakNext;
+    utter.onerror = (event) => {
+      // synth.cancel() (called by stop(), or by speakNode() starting a
+      // new chapter) fires 'error' on whatever utterance was mid-speech
+      // — that's an intentional interruption, not a finished segment.
+      // Treating it as "advance to next" was the actual bug: stopping
+      // playback was silently moving the saved position forward (and
+      // could even trigger the next segment to start speaking anyway).
+      // Only a genuine synthesis failure should behave like onend.
+      if (event.error === 'canceled' || event.error === 'interrupted') return;
+      speakNext();
+    };
     synth.speak(utter);
   }, [voiceAndPitchFor]);
 
-  const speakNode = useCallback((node, onDone) => {
+  /**
+   * `startIndex` lets playback resume mid-chapter instead of always
+   * starting fresh — used when a reader returns to a chapter they'd
+   * already been listening to in a previous session (see
+   * useNarrationPosition). `onSegmentStart(index)` fires right before
+   * each segment plays, so the caller can persist "how far we got" as
+   * we go, not just at the end.
+   */
+  const speakNode = useCallback((node, onDone, { startIndex = 0, onSegmentStart = null } = {}) => {
     if (!synth) return;
     synth.cancel();
-    queueRef.current = segmentNode(node);
+    queueRef.current = segmentNode(node).slice(startIndex);
+    indexRef.current = startIndex;
+    onSegmentStartRef.current = onSegmentStart;
     onQueueEmptyRef.current = onDone || null;
     setIsSpeaking(true);
     setIsPaused(false);

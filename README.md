@@ -337,6 +337,39 @@ resolve to real nodes, all locked flags are correctly placed on both
 titles' Chapter 4+ content, and both titles' diamond branch structures
 are intact.
 
+### Narration resumes mid-chapter, not just mid-book (this session)
+
+Previously, "Continue Reading" correctly took you back to the right
+*chapter*, but narration always restarted that chapter's audio from the
+very beginning — there was no memory of how far into it you'd actually
+listened.
+
+Fixed: `useNarration`'s `speakNode` now accepts a `startIndex` and an
+`onSegmentStart` callback. As each line of dialogue/narration plays, its
+position is saved to `localStorage` (per-device, same reasoning as
+voice choice — playback position is tied to this device's specific
+narration, not meaningful to sync elsewhere). The *first* time narration
+plays in a session, it checks for a saved position on the current
+chapter and resumes there; any *subsequent* chapter change in that same
+session always starts fresh, since that's a new chapter, not a
+returning one. Position clears automatically once a chapter finishes
+narrating naturally, so revisiting it later starts from the top again
+rather than the end.
+
+**To verify:** start reading with auto-read on, let a chapter play for
+a few lines, then close the tab entirely (not just navigate away).
+Reopen, hit Continue Reading — narration should pick up from roughly
+where you left off, not the first line again.
+
+**Follow-up fix — resume was landing one paragraph too far ahead.** The
+actual cause: `synth.cancel()` (called by `stop()`, or by starting a new
+chapter's narration) fires `onerror` on whatever utterance was
+mid-speech — and that error handler was treating *any* error, including
+an intentional cancellation, as "this segment finished, advance."  So
+every stop was silently advancing the saved position past what had
+actually been heard. Fixed by checking `event.error` — only a genuine
+synthesis failure advances the queue now; a cancellation just stops.
+
 ### Deploy to Vercel
 
 1. Push this project to a GitHub repo.

@@ -5,6 +5,7 @@ import { useReadingProgress } from './engine/useReadingProgress.js';
 import { useStoryEngine } from './engine/useStoryEngine.js';
 import { useNarration } from './engine/useNarration.js';
 import { useNarratorSettings } from './engine/useNarratorSettings.js';
+import { getSavedPosition, saveSavedPosition, clearSavedPosition } from './engine/useNarrationPosition.js';
 import { useVoiceChoice } from './engine/useVoiceChoice.js';
 import { usePurchase } from './engine/usePurchase.js';
 import { ChapterView } from './components/ChapterView.jsx';
@@ -140,7 +141,7 @@ export default function App() {
 }
 
 function StoryReader({ title, story, resumeFrom, onProgressChange, purchase, isAnonymous, onBackToLanding }) {
-  const { currentNode, choose, restart } = useStoryEngine(story, resumeFrom, onProgressChange);
+  const { currentNode, currentNodeId, choose, restart } = useStoryEngine(story, resumeFrom, onProgressChange);
   const narration = useNarration();
   const voiceChoice = useVoiceChoice();
   const [savedSettings, updateSavedSettings] = useNarratorSettings();
@@ -217,19 +218,42 @@ function StoryReader({ title, story, resumeFrom, onProgressChange, purchase, isA
     }
   }, [voiceChoice, choose]);
 
+  // Only the very first time narration plays in this session should it
+  // resume from a saved mid-chapter position — after that, normal
+  // navigation to a new chapter should always start that chapter fresh.
+  const hasUsedResumePositionRef = useRef(false);
+
+  const speakCurrentNode = useCallback(() => {
+    const positionKey = `${title.id}:${currentNodeId}`;
+    const startIndex = hasUsedResumePositionRef.current ? 0 : getSavedPosition(positionKey);
+    hasUsedResumePositionRef.current = true;
+
+    narration.speakNode(
+      currentNode,
+      () => {
+        clearSavedPosition(positionKey); // finished naturally — nothing to resume next time
+        maybeListen(currentNode);
+      },
+      {
+        startIndex,
+        onSegmentStart: (i) => saveSavedPosition(positionKey, i),
+      }
+    );
+  }, [narration, currentNode, currentNodeId, title.id, maybeListen]);
+
   const playPause = useCallback(() => {
     if (narration.isPaused) {
       narration.resume();
     } else if (narration.isSpeaking) {
       narration.pause();
     } else {
-      narration.speakNode(currentNode, () => maybeListen(currentNode));
+      speakCurrentNode();
     }
-  }, [narration, currentNode, maybeListen]);
+  }, [narration, speakCurrentNode]);
 
   useEffect(() => {
     narration.stop();
-    if (autoRead && !isLockedAndUnpaid) narration.speakNode(currentNode, () => maybeListen(currentNode));
+    if (autoRead && !isLockedAndUnpaid) speakCurrentNode();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentNode, isLockedAndUnpaid]);
 
