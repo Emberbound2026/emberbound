@@ -1,5 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { emberCourt } from './data/stories/ember-court.js';
+import { fetchTitle } from './data/supabaseClient.js';
+import { useAuth } from './engine/useAuth.js';
+import { useReadingProgress } from './engine/useReadingProgress.js';
 import { useStoryEngine } from './engine/useStoryEngine.js';
 import { useNarration } from './engine/useNarration.js';
 import { useVoiceChoice } from './engine/useVoiceChoice.js';
@@ -8,27 +10,73 @@ import { ChoiceList } from './components/ChoiceList.jsx';
 import { NarratorBar } from './components/NarratorBar.jsx';
 import './styles/app.css';
 
+const TITLE_ID = 'ember-court';
+
 export default function App() {
-  // Swapping `emberCourt` for a Supabase-fetched title is the whole
-  // multi-title story — the engine and every component below only ever
-  // deal with the { startNode, nodes } shape, never this specific file.
-  const { currentNode, choose, restart } = useStoryEngine(emberCourt);
+  const { user, loading: authLoading } = useAuth();
+  const [titleData, setTitleData] = useState(null);
+  const [loadError, setLoadError] = useState(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetchTitle(TITLE_ID)
+      .then((data) => { if (!cancelled) setTitleData(data); })
+      .catch((err) => { if (!cancelled) setLoadError(err); });
+    return () => { cancelled = true; };
+  }, []);
+
+  const { initialProgress, saveProgress } = useReadingProgress(user?.id, TITLE_ID);
+
+  const resumeReady = initialProgress !== undefined;
+
+  if (loadError) {
+    return (
+      <div className="book">
+        <div className="page">
+          <p className="story-text">
+            Couldn't load the story ({loadError.message}). Check your Supabase
+            connection and try refreshing.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!titleData || authLoading || !resumeReady) {
+    return (
+      <div className="book">
+        <div className="page">
+          <p className="story-text">Loading…</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <StoryReader
+      title={titleData.title}
+      story={titleData.story}
+      resumeFrom={initialProgress}
+      onProgressChange={saveProgress}
+    />
+  );
+}
+
+function StoryReader({ title, story, resumeFrom, onProgressChange }) {
+  const { currentNode, choose, restart } = useStoryEngine(story, resumeFrom, onProgressChange);
   const narration = useNarration();
   const voiceChoice = useVoiceChoice();
 
   const [autoRead, setAutoRead] = useState(false);
   const [handsFree, setHandsFree] = useState(false);
-
   const handsFreeRef = useRef(handsFree);
   useEffect(() => { handsFreeRef.current = handsFree; }, [handsFree]);
 
   const maybeListen = useCallback((node) => {
     if (handsFreeRef.current && node.choices) {
-      voiceChoice.listenForChoice(node.choices, (index) => {
-        choose(node.choices[index]);
-      });
+      voiceChoice.listenForChoice(node.choices, (index) => choose(node.choices[index]));
     }
-  }, [voiceChoice, choose, handsFreeRef]);
+  }, [voiceChoice, choose]);
 
   const playPause = useCallback(() => {
     if (narration.isSpeaking) {
@@ -38,19 +86,16 @@ export default function App() {
     }
   }, [narration, currentNode, maybeListen]);
 
-  // Reset narration/voice state and optionally auto-read on every navigation.
   useEffect(() => {
     narration.stop();
-    if (autoRead) {
-      narration.speakNode(currentNode, () => maybeListen(currentNode));
-    }
+    if (autoRead) narration.speakNode(currentNode, () => maybeListen(currentNode));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentNode]);
 
   return (
     <div className="book">
       <div className="kicker">A branching romantasy — fade-to-black edition</div>
-      <h1 className="title">The Ember Court</h1>
+      <h1 className="title">{title.name}</h1>
       <div className="chapter-name">{currentNode.chapter}</div>
 
       <NarratorBar
