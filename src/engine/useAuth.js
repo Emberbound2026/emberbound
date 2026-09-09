@@ -43,5 +43,5 @@ export function useAuth() {
     };
   }, []);
 
-  return { user, loading };
+  return { user, loading, isAnonymous: user?.is_anonymous ?? false };
 }

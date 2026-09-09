@@ -30,6 +30,9 @@ Deno.serve(async (req) => {
     return new Response('Method not allowed', { status: 405, headers: corsHeaders });
   }
 
+  // Verify the reader's Supabase session from their auth header — we
+  // need a real user_id to attach to the purchase, not something the
+  // client could spoof by just passing a value in the request body.
   const authHeader = req.headers.get('Authorization');
   if (!authHeader) return new Response('Missing auth', { status: 401, headers: corsHeaders });
 
@@ -44,6 +47,7 @@ Deno.serve(async (req) => {
   const { titleId } = await req.json();
   if (!titleId) return new Response('Missing titleId', { status: 400, headers: corsHeaders });
 
+  // Look up the real price server-side — never trust a price from the client.
   const { data: title, error: titleError } = await supabase
     .from('titles')
     .select('id, name, price_cents')
@@ -61,6 +65,8 @@ Deno.serve(async (req) => {
       },
       quantity: 1,
     }],
+    // metadata is how the webhook (which has no idea who clicked what)
+    // finds out which user bought which title.
     metadata: { user_id: user.id, title_id: title.id },
     success_url: `${siteUrl}/?checkout=success`,
     cancel_url: `${siteUrl}/?checkout=cancelled`,

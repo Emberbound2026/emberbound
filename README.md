@@ -191,6 +191,39 @@ supabase secrets set STRIPE_WEBHOOK_SECRET=whsec_...
   the brief gap while the webhook processes)
 - Supabase Table Editor → `purchases` → should show a new row
 
+### Landing page + account upgrade (this session)
+
+**Landing page:** the app no longer drops straight into Chapter 1. There's
+now a front screen (Emberbound brand, featured title, tagline) with a
+"Start Reading" / "Continue Reading" button (the label itself tells you
+whether saved progress was found). It loads fast because it only queries
+the lightweight `titles` row — the full story text only fetches once you
+actually enter the reader.
+
+**Account upgrade:** anonymous readers now see a quiet "Save your
+account" link inside the reader (not the landing page — didn't want it
+competing with the main CTA before anyone's even started). This lets a
+reader attach an email to their existing anonymous session — Supabase
+keeps the same user id, so purchases and progress carry over
+automatically, no data migration involved.
+
+**One required Supabase setting** for the confirmation email's link to
+actually redirect back to your app instead of erroring:
+- Supabase dashboard → **Authentication** → **URL Configuration**
+- **Site URL:** `https://emberbound.vercel.app`
+- **Redirect URLs:** add both `https://emberbound.vercel.app/**` and
+  `http://localhost:5173/**` (or whichever port your dev server uses) so
+  the flow works in both production and local testing
+
+**To verify account upgrade works:**
+1. In the reader, click "Save your account" → enter a real email you can check → Save
+2. Check that inbox for a confirmation email from Supabase
+3. Click the link — should redirect back to the app
+4. Supabase → Authentication → Users → that user's row should now show
+   the real email instead of blank/anonymous
+5. Reload the app in the *same* browser — should still resume correctly
+   (proves the user id, and everything keyed to it, didn't change)
+
 ### Deploy to Vercel
 
 1. Push this project to a GitHub repo.
