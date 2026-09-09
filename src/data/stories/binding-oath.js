@@ -13,7 +13,7 @@ export const bindingOath = {
 
 Instead, you're standing in the wreckage of a containment circle, his blade through the space where your chest used to be a moment ago, both of you staring down at your joined hands like they belong to someone else.
 
-"What," he says, very carefully, "did you just do."
+"What," he says, very carefully, "did you just do?"
 
 "Saved my own life, unless you'd like to try that again and find out what happens." Your voice comes out steadier than you feel. The binding-glyphs still glow faintly along your wrist, matching the ones now scored into his.
 
@@ -275,7 +275,7 @@ Afterward, in the wreckage of everything his house is about to lose, he doesn't 
       chapter: "Six — Severance",
       text: `Standing over the evidence together, you say only what's necessary. The glyph-key flares — and resists.
 
-"It's not enough," he says, understanding it in real time, the exact moment the unraveling stalls. "It has to be everything. You have to mean it completely, or the binding holds them a way in—"
+"It's not enough," he says, understanding it in real time, the exact moment the unraveling stalls. "It has to be everything. You have to mean it completely, or the binding leaves them a way in—"
 
 The sabotage fights back. Whatever's left of the conspiracy's control finds the gap you left guarded and drives into it. You fight — dragon-blood or not, a mage who nearly took his arm off once doesn't fight any less hard the second time — and between the two of you the immediate threat is beaten back, his house's worst secret exposed regardless.
 

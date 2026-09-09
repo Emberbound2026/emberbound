@@ -311,6 +311,32 @@ just sitting inline at the top like a page heading. Fixed:
   past the edges of content, which is a small thing that reads as
   "browser tab" the moment it happens.
 
+### Bug fix + content review pass (this session)
+
+**Pause/resume bug, fixed:** clicking "Pause" set the browser's speech
+engine to paused, but the app never tracked that as distinct from
+"speaking" — so the button just kept calling `pause()` again instead of
+ever calling `resume()`. `useNarration` now has a real `isPaused` state,
+and the button correctly cycles through Read aloud → Pause → Resume.
+
+**Content review — both titles read through in full for continuity and
+punctuation.** Found and fixed:
+- Ember Court: a tagged question ("What does that mean," you ask, "in
+  practice.") was missing its question mark — fixed to "in practice?"
+- Ember Court: "ember court" appeared lowercase twice in the prose
+  despite being the story's proper-noun title — capitalized to "Ember
+  Court" for consistency in both places
+- Binding Oath: same missing-question-mark issue ("did you just do.")
+  — fixed to "did you just do?"
+- Binding Oath: a genuine grammar error — "the binding holds them a way
+  in" isn't valid English — corrected to "the binding leaves them a way
+  in"
+
+No structural issues found — all choice `next`/`branchOn` references
+resolve to real nodes, all locked flags are correctly placed on both
+titles' Chapter 4+ content, and both titles' diamond branch structures
+are intact.
+
 ### Deploy to Vercel
 
 1. Push this project to a GitHub repo.

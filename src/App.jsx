@@ -218,7 +218,9 @@ function StoryReader({ title, story, resumeFrom, onProgressChange, purchase, isA
   }, [voiceChoice, choose]);
 
   const playPause = useCallback(() => {
-    if (narration.isSpeaking) {
+    if (narration.isPaused) {
+      narration.resume();
+    } else if (narration.isSpeaking) {
       narration.pause();
     } else {
       narration.speakNode(currentNode, () => maybeListen(currentNode));
@@ -247,7 +249,7 @@ function StoryReader({ title, story, resumeFrom, onProgressChange, purchase, isA
               handsFree={handsFree}
               setHandsFree={setHandsFree}
               onPlayPause={playPause}
-              playLabel={narration.isSpeaking ? 'Pause' : 'Read aloud'}
+              playLabel={narration.isPaused ? 'Resume' : narration.isSpeaking ? 'Pause' : 'Read aloud'}
             />
           )}
 

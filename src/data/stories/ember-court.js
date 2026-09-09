@@ -13,7 +13,7 @@ export const emberCourt = {
 
 You know that seal. Three years hasn't dulled the memory of it pressed into skin instead of paper.
 
-*Come to the ember court, or the debt comes due.*
+*Come to the Ember Court, or the debt comes due.*
 
 No signature. It doesn't need one.
 
@@ -115,7 +115,7 @@ It doesn't feel done. It feels like the opposite of done — like a door that wa
       chapter: "Three — The Binding",
       text: `The ritual chamber smells of salt and something older than salt. He explains it plainly, without the practiced charm you remember him wielding like a weapon — the oath he swore three years ago, half-understood, has been unraveling the court's protections ever since. The only way to re-anchor it is to complete what was started. Together. Now.
 
-"What does that mean," you ask, "in practice."
+"What does that mean," you ask, "in practice?"
 
 "A binding." He holds out his hand, palm up, an old iron blade resting across it. "Blood, intent, and proximity. You don't have to feel anything for it to work. It only requires that you're honest about what's true."
 
@@ -343,7 +343,7 @@ At the door, he stops you — not with a hand, just with your name, said plainly
 
 You don't have an answer for that either. You leave anyway, the debt unpaid, the court standing on borrowed time, and — for the first time in three years — nothing unsaid weighing down the road behind you.
 
-Whatever happens to the ember court next, it happens without either of you pretending to be something you weren't ready to be tonight.`,
+Whatever happens to the Ember Court next, it happens without either of you pretending to be something you weren't ready to be tonight.`,
       ending: true,
       tag: "Ending: Unbound"
     }

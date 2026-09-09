@@ -53,6 +53,7 @@ export function useNarration() {
   const [herVoice, setHerVoice] = useState(0);
   const [hisVoice, setHisVoice] = useState(0);
   const [isSpeaking, setIsSpeaking] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
   const queueRef = useRef([]);
   const onQueueEmptyRef = useRef(null);
 
@@ -120,6 +121,7 @@ export function useNarration() {
     queueRef.current = segmentNode(node);
     onQueueEmptyRef.current = onDone || null;
     setIsSpeaking(true);
+    setIsPaused(false);
     speakNext();
   }, [speakNext]);
 
@@ -127,15 +129,25 @@ export function useNarration() {
     if (synth) synth.cancel();
     queueRef.current = [];
     setIsSpeaking(false);
+    setIsPaused(false);
   }, []);
 
-  const pause = useCallback(() => synth && synth.pause(), []);
-  const resume = useCallback(() => synth && synth.resume(), []);
+  const pause = useCallback(() => {
+    if (!synth) return;
+    synth.pause();
+    setIsPaused(true);
+  }, []);
+
+  const resume = useCallback(() => {
+    if (!synth) return;
+    synth.resume();
+    setIsPaused(false);
+  }, []);
 
   return {
     supported: !!synth,
     voices, narratorVoice, herVoice, hisVoice,
     setNarratorVoice, setHerVoice, setHisVoice,
-    isSpeaking, speakNode, stop, pause, resume,
+    isSpeaking, isPaused, speakNode, stop, pause, resume,
   };
 }
