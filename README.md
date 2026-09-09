@@ -290,6 +290,27 @@ Three related fixes:
 this isn't stored in Supabase). A reader switching devices gets fresh
 defaults there, which is expected, not a bug.
 
+### App-shell polish (this session)
+
+The single biggest thing that made this feel like a webpage rather than
+an app: everything scrolled as one flat document, with the title/brand
+just sitting inline at the top like a page heading. Fixed:
+
+- **Fixed header bar** (`AppHeader`) — persists at the top with a blur
+  backdrop while content scrolls underneath, back button on the reader,
+  current chapter name as a subtitle. This one change does more for the
+  "app" feeling than anything else here.
+- **Page-turn transition** — each chapter fades/slides in on
+  navigation, instead of content just snapping into place.
+- **Tap feedback** — buttons scale down slightly on press (`:active`),
+  which reads as tactile/native rather than a static webpage click.
+- **Safe-area insets** (`env(safe-area-inset-*)`) — header and content
+  padding account for notches/home indicators once installed as a PWA
+  on a real device, not just visually correct in a browser tab.
+- **Contained overscroll** — no rubber-band bounce revealing background
+  past the edges of content, which is a small thing that reads as
+  "browser tab" the moment it happens.
+
 ### Deploy to Vercel
 
 1. Push this project to a GitHub repo.

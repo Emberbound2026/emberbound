@@ -12,6 +12,7 @@ import { ChoiceList } from './components/ChoiceList.jsx';
 import { NarratorBar } from './components/NarratorBar.jsx';
 import { Paywall } from './components/Paywall.jsx';
 import { LandingPage } from './components/LandingPage.jsx';
+import { AppHeader } from './components/AppHeader.jsx';
 import { AccountUpgrade } from './components/AccountUpgrade.jsx';
 import './styles/app.css';
 
@@ -74,40 +75,54 @@ export default function App() {
 
   if (loadError) {
     return (
-      <div className="book">
-        <div className="page">
-          <p className="story-text">
-            Couldn't load Emberbound ({loadError.message}). Check your Supabase
-            connection and try refreshing.
-          </p>
+      <>
+        <AppHeader title="Emberbound" />
+        <div className="app-content">
+          <div className="page">
+            <p className="story-text">
+              Couldn't load Emberbound ({loadError.message}). Check your Supabase
+              connection and try refreshing.
+            </p>
+          </div>
         </div>
-      </div>
+      </>
     );
   }
 
   if (!selectedTitleId) {
     if (!catalog || authLoading) {
       return (
-        <div className="book">
-          <div className="page"><p className="story-text">Loading…</p></div>
-        </div>
+        <>
+          <AppHeader title="Emberbound" />
+          <div className="app-content">
+            <div className="page"><p className="story-text">Loading…</p></div>
+          </div>
+        </>
       );
     }
     return (
-      <LandingPage
-        titles={catalog}
-        inProgressIds={inProgressIds}
-        onSelect={setSelectedTitleId}
-      />
+      <>
+        <AppHeader title="Emberbound" />
+        <div className="app-content">
+          <LandingPage
+            titles={catalog}
+            inProgressIds={inProgressIds}
+            onSelect={setSelectedTitleId}
+          />
+        </div>
+      </>
     );
   }
 
   const resumeReady = initialProgress !== undefined;
   if (!titleData || authLoading || !resumeReady || purchase.isUnlocked === undefined) {
     return (
-      <div className="book">
-        <div className="page"><p className="story-text">Loading…</p></div>
-      </div>
+      <>
+        <AppHeader title="Emberbound" onBack={handleBackToLanding} />
+        <div className="app-content">
+          <div className="page"><p className="story-text">Loading…</p></div>
+        </div>
+      </>
     );
   }
 
@@ -217,48 +232,40 @@ function StoryReader({ title, story, resumeFrom, onProgressChange, purchase, isA
   }, [currentNode, isLockedAndUnpaid]);
 
   return (
-    <div className="book">
-      <button
-        onClick={onBackToLanding}
-        style={{
-          background: 'none', border: 'none', color: 'var(--ink-dim)',
-          fontSize: 12, cursor: 'pointer', padding: 0, marginBottom: 8,
-        }}
-      >
-        ← Emberbound
-      </button>
-      <div className="kicker">A branching romantasy — fade-to-black edition</div>
-      <h1 className="title">{title.name}</h1>
-      {!isLockedAndUnpaid && <div className="chapter-name">{currentNode.chapter}</div>}
+    <>
+      <AppHeader title={title.name} subtitle={!isLockedAndUnpaid ? currentNode.chapter : undefined} onBack={onBackToLanding} />
+      <div className="app-content">
+        <div className="book">
+          <AccountUpgrade isAnonymous={isAnonymous} />
 
-      <AccountUpgrade isAnonymous={isAnonymous} />
+          {!isLockedAndUnpaid && (
+            <NarratorBar
+              narration={narration}
+              voiceChoice={voiceChoice}
+              autoRead={autoRead}
+              setAutoRead={setAutoRead}
+              handsFree={handsFree}
+              setHandsFree={setHandsFree}
+              onPlayPause={playPause}
+              playLabel={narration.isSpeaking ? 'Pause' : 'Read aloud'}
+            />
+          )}
 
-      {!isLockedAndUnpaid && (
-        <NarratorBar
-          narration={narration}
-          voiceChoice={voiceChoice}
-          autoRead={autoRead}
-          setAutoRead={setAutoRead}
-          handsFree={handsFree}
-          setHandsFree={setHandsFree}
-          onPlayPause={playPause}
-          playLabel={narration.isSpeaking ? 'Pause' : 'Read aloud'}
-        />
-      )}
-
-      {isLockedAndUnpaid ? (
-        <Paywall
-          title={title}
-          onUnlock={purchase.startCheckout}
-          loading={purchase.checkoutLoading}
-          error={purchase.checkoutError}
-        />
-      ) : (
-        <div className="page">
-          <ChapterView node={currentNode} />
-          <ChoiceList node={currentNode} onChoose={choose} onRestart={restart} />
+          {isLockedAndUnpaid ? (
+            <Paywall
+              title={title}
+              onUnlock={purchase.startCheckout}
+              loading={purchase.checkoutLoading}
+              error={purchase.checkoutError}
+            />
+          ) : (
+            <div className="page page-transition" key={currentNode.chapter}>
+              <ChapterView node={currentNode} />
+              <ChoiceList node={currentNode} onChoose={choose} onRestart={restart} />
+            </div>
+          )}
         </div>
-      )}
-    </div>
+      </div>
+    </>
   );
 }

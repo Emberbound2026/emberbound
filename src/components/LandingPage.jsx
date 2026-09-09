@@ -3,10 +3,9 @@ export function LandingPage({ titles, inProgressIds, onSelect }) {
     <div className="book" style={{ textAlign: 'center' }}>
       <img
         src="/icon-512.png"
-        alt=""
-        style={{ width: 72, height: 72, borderRadius: 16, margin: '0 auto 20px', display: 'block' }}
+        alt="Emberbound"
+        style={{ width: 72, height: 72, borderRadius: 16, margin: '0 auto 16px', display: 'block' }}
       />
-      <h1 className="title" style={{ marginBottom: 6 }}>Emberbound</h1>
       <p style={{ fontSize: 14, color: 'var(--ink-dim)', marginBottom: 36 }}>
         Choose how the story unfolds.
       </p>
