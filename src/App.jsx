@@ -8,11 +8,13 @@ import { useNarratorSettings } from './engine/useNarratorSettings.js';
 import { getSavedPosition, saveSavedPosition, clearSavedPosition } from './engine/useNarrationPosition.js';
 import { useVoiceChoice } from './engine/useVoiceChoice.js';
 import { usePurchase } from './engine/usePurchase.js';
+import { useBundlePurchase } from './engine/useBundlePurchase.js';
 import { ChapterView } from './components/ChapterView.jsx';
 import { ChoiceList } from './components/ChoiceList.jsx';
 import { EndingModal } from './components/EndingModal.jsx';
 import { NarratorBar } from './components/NarratorBar.jsx';
 import { Paywall } from './components/Paywall.jsx';
+import { BundlePromo } from './components/BundlePromo.jsx';
 import { LandingPage } from './components/LandingPage.jsx';
 import { AppHeader } from './components/AppHeader.jsx';
 import { AccountModal } from './components/AccountModal.jsx';
@@ -65,6 +67,7 @@ export default function App() {
 
   const { initialProgress, saveProgress } = useReadingProgress(user?.id, selectedTitleId);
   const purchase = usePurchase(user?.id, selectedTitleId);
+  const bundle = useBundlePurchase(user?.id, catalog?.length);
 
   const handleBackToLanding = useCallback(() => {
     setSelectedTitleId(null);
@@ -116,6 +119,17 @@ export default function App() {
             onSelect={setSelectedTitleId}
             isAnonymous={isAnonymous}
           />
+          <div className="catalog-section">
+            <BundlePromo
+              titles={catalog}
+              isAnonymous={isAnonymous}
+              hasFullLibrary={bundle.hasFullLibrary}
+              onUnlock={bundle.startBundleCheckout}
+              loading={bundle.checkoutLoading}
+              error={bundle.checkoutError}
+              redirectPath="/"
+            />
+          </div>
         </div>
         {accountModalOpen && (
           <AccountModal isAnonymous={isAnonymous} userEmail={user?.email} onClose={() => setAccountModalOpen(false)} />
@@ -143,6 +157,8 @@ export default function App() {
       resumeFrom={initialProgress}
       onProgressChange={saveProgress}
       purchase={purchase}
+      bundle={bundle}
+      catalog={catalog}
       isAnonymous={isAnonymous}
       userEmail={user?.email}
       onBackToLanding={handleBackToLanding}
@@ -152,7 +168,7 @@ export default function App() {
   );
 }
 
-function StoryReader({ title, story, resumeFrom, onProgressChange, purchase, isAnonymous, userEmail, onBackToLanding, accountModalOpen, setAccountModalOpen }) {
+function StoryReader({ title, story, resumeFrom, onProgressChange, purchase, bundle, catalog, isAnonymous, userEmail, onBackToLanding, accountModalOpen, setAccountModalOpen }) {
   const { currentNode, currentNodeId, choose, restart } = useStoryEngine(story, resumeFrom, onProgressChange);
   const narration = useNarration();
   const voiceChoice = useVoiceChoice();
@@ -294,14 +310,26 @@ function StoryReader({ title, story, resumeFrom, onProgressChange, purchase, isA
           )}
 
           {isLockedAndUnpaid ? (
-            <Paywall
-              title={title}
-              titleId={title.id}
-              isAnonymous={isAnonymous}
-              onUnlock={purchase.startCheckout}
-              loading={purchase.checkoutLoading}
-              error={purchase.checkoutError}
-            />
+            <>
+              <Paywall
+                title={title}
+                titleId={title.id}
+                isAnonymous={isAnonymous}
+                onUnlock={purchase.startCheckout}
+                loading={purchase.checkoutLoading}
+                error={purchase.checkoutError}
+              />
+              <BundlePromo
+                titles={catalog || []}
+                isAnonymous={isAnonymous}
+                hasFullLibrary={bundle.hasFullLibrary}
+                onUnlock={bundle.startBundleCheckout}
+                loading={bundle.checkoutLoading}
+                error={bundle.checkoutError}
+                redirectPath={`/?title=${title.id}`}
+                compact
+              />
+            </>
           ) : (
             <div className="page page-transition" key={currentNode.chapter}>
               <ChapterView node={currentNode} />

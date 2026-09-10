@@ -1,8 +1,9 @@
 // supabase/functions/create-checkout-session/index.ts
 //
-// Called from the client (see src/engine/usePurchase.js) when a reader
-// hits "Unlock this book". Runs server-side because it needs the Stripe
-// *secret* key — that can never live in client code.
+// Called from the client (see src/engine/usePurchase.js and
+// src/engine/useBundlePurchase.js) when a reader hits "Unlock this
+// book" or "Unlock the full library". Runs server-side because it
+// needs the Stripe *secret* key — that can never live in client code.
 
 import { createClient } from 'npm:@supabase/supabase-js@2';
 import Stripe from 'npm:stripe@16';
@@ -13,9 +14,13 @@ const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY')!, {
 
 const siteUrl = Deno.env.get('SITE_URL')!; // e.g. https://wovenfate.vercel.app
 
-// Required because this function is called directly from the browser —
-// without these headers, the browser's CORS preflight (an automatic
-// OPTIONS request) gets rejected before our actual code ever runs.
+// Bundle price lives here, server-side, same reasoning as never trusting
+// a single title's price from the client — the amount actually charged
+// must never come from the browser. One bundle exists today (the full
+// catalog), so a constant is fine; revisit if that ever changes.
+const BUNDLE_PRICE_CENTS = 1000; // £10.00
+const BUNDLE_NAME = 'Wovenfate — Full Library';
+
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -30,9 +35,6 @@ Deno.serve(async (req) => {
     return new Response('Method not allowed', { status: 405, headers: corsHeaders });
   }
 
-  // Verify the reader's Supabase session from their auth header — we
-  // need a real user_id to attach to the purchase, not something the
-  // client could spoof by just passing a value in the request body.
   const authHeader = req.headers.get('Authorization');
   if (!authHeader) return new Response('Missing auth', { status: 401, headers: corsHeaders });
 
@@ -44,10 +46,32 @@ Deno.serve(async (req) => {
   const { data: { user }, error: userError } = await supabase.auth.getUser();
   if (userError || !user) return new Response('Invalid session', { status: 401, headers: corsHeaders });
 
-  const { titleId } = await req.json();
+  const { titleId, bundle } = await req.json();
+
+  if (bundle) {
+    const session = await stripe.checkout.sessions.create({
+      mode: 'payment',
+      line_items: [{
+        price_data: {
+          currency: 'gbp',
+          unit_amount: BUNDLE_PRICE_CENTS,
+          product_data: { name: BUNDLE_NAME },
+        },
+        quantity: 1,
+      }],
+      // No title_id here — the webhook checks for type:'bundle' and
+      // unlocks every published title for this user, rather than one.
+      metadata: { user_id: user.id, type: 'bundle' },
+      success_url: `${siteUrl}/?checkout=success&bundle=true`,
+      cancel_url: `${siteUrl}/?checkout=cancelled&bundle=true`,
+    });
+    return new Response(JSON.stringify({ url: session.url }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+  }
+
   if (!titleId) return new Response('Missing titleId', { status: 400, headers: corsHeaders });
 
-  // Look up the real price server-side — never trust a price from the client.
   const { data: title, error: titleError } = await supabase
     .from('titles')
     .select('id, name, price_cents')
@@ -65,9 +89,7 @@ Deno.serve(async (req) => {
       },
       quantity: 1,
     }],
-    // metadata is how the webhook (which has no idea who clicked what)
-    // finds out which user bought which title.
-    metadata: { user_id: user.id, title_id: title.id },
+    metadata: { user_id: user.id, type: 'single', title_id: title.id },
     success_url: `${siteUrl}/?checkout=success&title=${title.id}`,
     cancel_url: `${siteUrl}/?checkout=cancelled&title=${title.id}`,
   });

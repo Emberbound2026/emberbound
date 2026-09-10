@@ -62,3 +62,19 @@ export async function fetchInProgressTitleIds(userId) {
   if (error) throw error;
   return new Set(data.map((row) => row.title_id));
 }
+
+/**
+ * Returns the set of title_ids this user has purchased — used to work
+ * out whether they already own the full library, so the bundle promo
+ * doesn't keep advertising itself to someone who's already bought
+ * everything.
+ */
+export async function fetchPurchasedTitleIds(userId) {
+  if (!userId) return new Set();
+  const { data, error } = await supabase
+    .from('purchases')
+    .select('title_id')
+    .eq('user_id', userId);
+  if (error) throw error;
+  return new Set(data.map((row) => row.title_id));
+}

@@ -583,6 +583,56 @@ try step 3 above with an email that's *already* linked to a different
 account from earlier testing, and confirm it correctly says "we sent
 a sign-in link" rather than erroring.
 
+### Bundle pricing (this session)
+
+Full-library bundle: £10.00 for all 5 books (vs. £14.95 bought
+individually). Shown two places:
+- **Landing page** — full promo card below the catalog, "★ Best Value"
+  badge, both prices shown with the savings called out
+- **Paywall** — a compact one-line upsell under the single-book unlock
+  button ("Or unlock all 5 books for £10.00 — save £4.95")
+
+**How it's implemented — no schema changes needed:** a bundle purchase
+writes the exact same `purchases` row shape as a single purchase, just
+one row per published title instead of one. `usePurchase`'s existing
+per-title unlock check needed zero changes to recognize a
+bundle-purchased title as unlocked — it's just reading the same table.
+
+- Bundle price (£10.00) lives **server-side only**, in the edge
+  function — same "never trust a price from the client" rule as single
+  titles
+- Same account-required gate as single purchases — a guest clicking
+  the bundle CTA sees the same email-auth form first
+- The webhook branches on `metadata.type` (`'bundle'` vs `'single'`) —
+  bundle fetches every published title and upserts a row per title in
+  one batch
+
+**One coordination fix worth knowing about:** `usePurchase`'s
+checkout-success polling effect used to clear the URL's success params
+unconditionally — which would have silently eaten a bundle purchase's
+`?bundle=true` redirect before `useBundlePurchase` got a chance to read
+it, since `usePurchase` is always mounted (even with no title selected,
+on the landing page). Fixed by gating that effect on an actual titleId
+being present.
+
+**Both edge functions changed and need redeploying:**
+```
+supabase functions deploy create-checkout-session
+supabase functions deploy stripe-webhook
+```
+
+**To verify:**
+1. Landing page shows the bundle card below the catalog with correct
+   pricing (£10.00, £14.95 struck through, save £4.95)
+2. As a guest, click it → auth gate appears (same as single-book flow)
+3. Sign in, click again → Stripe Checkout, test card `4242...`
+4. After redirect: **every** title should show unlocked, not just one
+   — check by visiting Chapter 4 on 2-3 different titles
+5. Supabase → `purchases` table → should show 5 new rows (one per
+   title), all sharing the same `receipt` (the Stripe session id)
+6. Revisit the landing page → bundle promo should now say "You own the
+   full library" instead of showing the upsell again
+
 ### Deploy to Vercel
 
 1. Push this project to a GitHub repo.

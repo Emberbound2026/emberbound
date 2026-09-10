@@ -33,7 +33,11 @@ export function usePurchase(userId, titleId) {
   // If we just came back from Stripe (?checkout=success), the webhook may
   // take a second or two to land — poll briefly rather than showing a
   // false "still locked" state right after a real successful payment.
+  // Guarded on titleId: without one, there's nothing for *this* hook to
+  // check, and clearing the URL here would strip a bundle-purchase
+  // redirect's params before useBundlePurchase gets to read them.
   useEffect(() => {
+    if (!titleId) return;
     const params = new URLSearchParams(window.location.search);
     if (params.get('checkout') !== 'success') return;
 
