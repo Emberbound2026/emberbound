@@ -508,6 +508,81 @@ word order, so it fits "Wovenfate" exactly as it fit "Fatewoven."
 and landing page both say "Wovenfate," and generate a share image on
 any ending to confirm it says "Wovenfate" / "wovenfate.app."
 
+### Account entry point moved to the header (this session)
+
+Previously, saving an account required already being inside a specific
+book — a small link buried in the reader, invisible until a reader had
+already started something. Moved to a persistent icon in the fixed
+header instead, visible on every screen including the landing page.
+
+- **Anonymous readers** see a small dot on the account icon (a subtle
+  "you haven't done this yet" indicator) — tapping it opens the same
+  save-your-account form as before, just reachable from anywhere
+- **Linked accounts** see no dot, and tapping shows a simple "Signed in
+  as [email]" confirmation instead
+- Still entirely optional and non-blocking — reading still starts with
+  zero friction, this just makes the option discoverable from the
+  first screen instead of hidden mid-story
+
+`AccountUpgrade.jsx` (the old inline link) is removed; `AccountModal.jsx`
+replaces it, reusing the same `useAccountUpgrade` hook underneath — no
+change to the actual linking mechanism, just where it's surfaced.
+
+**To verify:** the account icon (person silhouette) should now show in
+the header on the landing page itself, not just once you're reading.
+
+### Real sign-in + purchase account gate (this session)
+
+**The gap this closes:** "save your account" (built earlier) only
+protected progress on the *same* device — there was no way to actually
+sign into that account from a different device. That's fixed now, and
+purchases are protected by requiring a real account before checkout
+rather than relying on a reader remembering to save one afterward.
+
+**One unified email flow, three outcomes** (`useEmailAuth.js`):
+1. New email, currently a guest → links this email to the current
+   anonymous session (same mechanism as before) — progress/purchase in
+   progress on this device is preserved.
+2. Email already belongs to an existing account (reader's on a new
+   device) → falls back to a real sign-in link for that account
+   automatically. One form handles both cases — no separate
+   "Sign Up" vs "Sign In" UI needed, matching how passwordless auth
+   naturally works.
+3. **No passwords anywhere** — deliberately. This eliminates password
+   resets as a concern entirely, not just defers it.
+
+**Purchase gate:** clicking "Unlock this book" while still anonymous
+now shows the same email-auth form *instead of* the checkout button —
+reading through Chapter 3 remains completely free and frictionless as
+a guest, but a real account is required at the exact moment money
+would change hands, so a purchase can never end up tied to a session
+that gets silently lost.
+
+**Landing page:** a light, dismissible "Have an account? Sign in — or
+just start reading below as a guest" prompt appears for anonymous
+visitors. Non-blocking — the catalog and all free content are
+available immediately regardless of whether it's used.
+
+**Redirect handling:** the magic-link email brings the reader back to
+the *exact* screen they were on — the specific book/chapter they were
+trying to unlock, not just the homepage — via `emailRedirectTo`, the
+same pattern already used for the Stripe checkout redirect.
+
+**Worth testing carefully, this one has a real async round-trip:**
+1. As a guest, read any title to Chapter 4 — paywall appears
+2. Instead of a Buy button, the email-auth form should show
+3. Enter an email you can check → submit
+4. Check that inbox for a link → click it
+5. Should land back on **that exact locked chapter**, now signed in
+6. The paywall should now show the actual "Unlock this book" button
+7. Complete a test purchase — confirm it's tied to the signed-in
+   account (Supabase → Authentication → Users → real email, not blank)
+
+**Also worth testing:** the "already have an account" fallback —
+try step 3 above with an email that's *already* linked to a different
+account from earlier testing, and confirm it correctly says "we sent
+a sign-in link" rather than erroring.
+
 ### Deploy to Vercel
 
 1. Push this project to a GitHub repo.

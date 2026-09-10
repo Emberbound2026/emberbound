@@ -15,11 +15,12 @@ import { NarratorBar } from './components/NarratorBar.jsx';
 import { Paywall } from './components/Paywall.jsx';
 import { LandingPage } from './components/LandingPage.jsx';
 import { AppHeader } from './components/AppHeader.jsx';
-import { AccountUpgrade } from './components/AccountUpgrade.jsx';
+import { AccountModal } from './components/AccountModal.jsx';
 import './styles/app.css';
 
 export default function App() {
   const { user, loading: authLoading, isAnonymous } = useAuth();
+  const [accountModalOpen, setAccountModalOpen] = useState(false);
 
   // Which title (if any) is selected. Reading straight from the URL on
   // first load means a Stripe redirect (?checkout=success&title=...)
@@ -78,7 +79,7 @@ export default function App() {
   if (loadError) {
     return (
       <>
-        <AppHeader title="Wovenfate" />
+        <AppHeader title="Wovenfate" onAccountClick={() => setAccountModalOpen(true)} accountLinked={!isAnonymous} />
         <div className="app-content">
           <div className="page">
             <p className="story-text">
@@ -87,6 +88,9 @@ export default function App() {
             </p>
           </div>
         </div>
+        {accountModalOpen && (
+          <AccountModal isAnonymous={isAnonymous} userEmail={user?.email} onClose={() => setAccountModalOpen(false)} />
+        )}
       </>
     );
   }
@@ -95,7 +99,7 @@ export default function App() {
     if (!catalog || authLoading) {
       return (
         <>
-          <AppHeader title="Wovenfate" />
+          <AppHeader title="Wovenfate" onAccountClick={() => setAccountModalOpen(true)} accountLinked={!isAnonymous} />
           <div className="app-content">
             <div className="page"><p className="story-text">Loading…</p></div>
           </div>
@@ -104,14 +108,18 @@ export default function App() {
     }
     return (
       <>
-        <AppHeader title="Wovenfate" />
+        <AppHeader title="Wovenfate" onAccountClick={() => setAccountModalOpen(true)} accountLinked={!isAnonymous} />
         <div className="app-content">
           <LandingPage
             titles={catalog}
             inProgressIds={inProgressIds}
             onSelect={setSelectedTitleId}
+            isAnonymous={isAnonymous}
           />
         </div>
+        {accountModalOpen && (
+          <AccountModal isAnonymous={isAnonymous} userEmail={user?.email} onClose={() => setAccountModalOpen(false)} />
+        )}
       </>
     );
   }
@@ -136,12 +144,15 @@ export default function App() {
       onProgressChange={saveProgress}
       purchase={purchase}
       isAnonymous={isAnonymous}
+      userEmail={user?.email}
       onBackToLanding={handleBackToLanding}
+      accountModalOpen={accountModalOpen}
+      setAccountModalOpen={setAccountModalOpen}
     />
   );
 }
 
-function StoryReader({ title, story, resumeFrom, onProgressChange, purchase, isAnonymous, onBackToLanding }) {
+function StoryReader({ title, story, resumeFrom, onProgressChange, purchase, isAnonymous, userEmail, onBackToLanding, accountModalOpen, setAccountModalOpen }) {
   const { currentNode, currentNodeId, choose, restart } = useStoryEngine(story, resumeFrom, onProgressChange);
   const narration = useNarration();
   const voiceChoice = useVoiceChoice();
@@ -264,11 +275,11 @@ function StoryReader({ title, story, resumeFrom, onProgressChange, purchase, isA
         title={title.name}
         subtitle={!isLockedAndUnpaid ? currentNode.chapter : undefined}
         onBack={() => { narration.stop(); onBackToLanding(); }}
+        onAccountClick={() => setAccountModalOpen(true)}
+        accountLinked={!isAnonymous}
       />
       <div className="app-content">
         <div className="book">
-          <AccountUpgrade isAnonymous={isAnonymous} />
-
           {!isLockedAndUnpaid && (
             <NarratorBar
               narration={narration}
@@ -285,6 +296,8 @@ function StoryReader({ title, story, resumeFrom, onProgressChange, purchase, isA
           {isLockedAndUnpaid ? (
             <Paywall
               title={title}
+              titleId={title.id}
+              isAnonymous={isAnonymous}
               onUnlock={purchase.startCheckout}
               loading={purchase.checkoutLoading}
               error={purchase.checkoutError}
@@ -300,6 +313,9 @@ function StoryReader({ title, story, resumeFrom, onProgressChange, purchase, isA
           )}
         </div>
       </div>
+      {accountModalOpen && (
+        <AccountModal isAnonymous={isAnonymous} userEmail={userEmail} onClose={() => setAccountModalOpen(false)} />
+      )}
     </>
   );
 }
