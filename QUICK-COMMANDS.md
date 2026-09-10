@@ -3,7 +3,7 @@
 Keep this open in a tab while working with Claude. Run everything from
 your actual project folder: the one with `package.json`, `.git`, and
 `node_modules` directly inside it —
-`C:\Users\Liam\Documents\Claude - Wovenfate\wovenfate-app`
+`C:\Users\Liam\Documents\Wovenfate\wovenfate-app`
 
 (If you haven't renamed your local folders yet, see "One-time folder
 rename" below first — do that before using the path above.)
@@ -39,7 +39,7 @@ handles that fine, no need to reinstall or re-clone anything.
    ```
 3. From that exact extracted folder, copy the changes into your real project:
    ```powershell
-   robocopy . "C:\Users\Liam\Documents\Claude - Wovenfate\wovenfate-app" /E /XD node_modules
+   robocopy . "C:\Users\Liam\Documents\Wovenfate\wovenfate-app" /E /XD node_modules
    ```
 4. Confirm it runs:
    ```

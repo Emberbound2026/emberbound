@@ -260,7 +260,11 @@ function StoryReader({ title, story, resumeFrom, onProgressChange, purchase, isA
 
   return (
     <>
-      <AppHeader title={title.name} subtitle={!isLockedAndUnpaid ? currentNode.chapter : undefined} onBack={onBackToLanding} />
+      <AppHeader
+        title={title.name}
+        subtitle={!isLockedAndUnpaid ? currentNode.chapter : undefined}
+        onBack={() => { narration.stop(); onBackToLanding(); }}
+      />
       <div className="app-content">
         <div className="book">
           <AccountUpgrade isAnonymous={isAnonymous} />
