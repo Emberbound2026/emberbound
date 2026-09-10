@@ -687,6 +687,44 @@ card should say "Purchased." Purchase the bundle — all 5 should
 update, including if the bundle redirect lands you straight on the
 landing page rather than back at a specific book.
 
+### Fair bundle pricing — "complete your collection" credit (this session)
+
+**Real bug, found through testing:** buying books individually then the
+bundle afterward could cost *more in total* than the bundle itself —
+e.g. 2 individual books (£5.98) + full bundle (£10) = £15.98, more than
+buying all 5 as singles from scratch (£14.95). The bundle was charging
+full price regardless of what was already owned.
+
+**Fixed server-side** (`create-checkout-session`, deployed directly
+through the connected Supabase tool) — the bundle checkout now:
+1. Looks up what the reader already owns
+2. Credits what they already paid against the bundle price
+3. Charges `max(£0.30, £10.00 − already paid)` — Stripe's real
+   documented GBP minimum is the floor, since a charge can't go to £0
+4. If they already own everything, checkout is refused outright with a
+   clear error rather than double-charging for nothing
+
+**Guarantee this gives:** total spend across *any* purchase order —
+one book then the bundle, three books then the bundle, whatever —
+never exceeds what the bundle costs outright. Buying in a different
+order is never penalized.
+
+**Client-side display updated to match** — `BundlePromo` now mirrors
+the same formula (same constants, same math) so what's shown before
+checkout is always the real price, not a flat £10.00 regardless of
+ownership. When there's credit, the copy adapts too: "Complete your
+collection — 3 left," a note showing the credited amount, and the CTA
+says "Unlock the remaining 3 books" instead of "all 5."
+
+**Already deployed** — no `supabase functions deploy` needed this time,
+done directly through the connector while building this.
+
+**To verify:** buy 1–2 titles individually, then check the bundle
+promo — price should be less than £10.00 and the copy should mention
+your credit. Complete that purchase and confirm in Stripe's dashboard
+(test mode) that the actual charge matches the discounted amount shown,
+not a flat £10.00.
+
 ### Deploy to Vercel
 
 1. Push this project to a GitHub repo.

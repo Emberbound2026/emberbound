@@ -166,6 +166,7 @@ export default function App() {
           <div className="catalog-section">
             <BundlePromo
               titles={catalog}
+              purchasedIds={purchasedIds}
               isAnonymous={isAnonymous}
               hasFullLibrary={bundle.hasFullLibrary}
               onUnlock={bundle.startBundleCheckout}
@@ -203,6 +204,7 @@ export default function App() {
       purchase={purchase}
       bundle={bundle}
       catalog={catalog}
+      purchasedIds={purchasedIds}
       isAnonymous={isAnonymous}
       userEmail={user?.email}
       onBackToLanding={handleBackToLanding}
@@ -212,7 +214,7 @@ export default function App() {
   );
 }
 
-function StoryReader({ title, story, resumeFrom, onProgressChange, purchase, bundle, catalog, isAnonymous, userEmail, onBackToLanding, accountModalOpen, setAccountModalOpen }) {
+function StoryReader({ title, story, resumeFrom, onProgressChange, purchase, bundle, catalog, purchasedIds, isAnonymous, userEmail, onBackToLanding, accountModalOpen, setAccountModalOpen }) {
   const { currentNode, currentNodeId, choose, restart } = useStoryEngine(story, resumeFrom, onProgressChange);
   const narration = useNarration();
   const voiceChoice = useVoiceChoice();
@@ -365,6 +367,7 @@ function StoryReader({ title, story, resumeFrom, onProgressChange, purchase, bun
               />
               <BundlePromo
                 titles={catalog || []}
+                purchasedIds={purchasedIds}
                 isAnonymous={isAnonymous}
                 hasFullLibrary={bundle.hasFullLibrary}
                 onUnlock={bundle.startBundleCheckout}

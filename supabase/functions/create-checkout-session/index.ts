@@ -21,6 +21,12 @@ const siteUrl = Deno.env.get('SITE_URL')!; // e.g. https://wovenfate.vercel.app
 const BUNDLE_PRICE_CENTS = 1000; // £10.00
 const BUNDLE_NAME = 'Wovenfate — Full Library';
 
+// Stripe's actual documented minimum for GBP (docs.stripe.com/currencies)
+// — used as the floor for a discounted "complete your collection" price,
+// since Stripe can't process a charge below this regardless of how much
+// credit a reader has earned from prior individual purchases.
+const MIN_CHARGE_CENTS = 30; // £0.30
+
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -49,13 +55,43 @@ Deno.serve(async (req) => {
   const { titleId, bundle } = await req.json();
 
   if (bundle) {
+    // Fair "complete your collection" pricing: a reader who already
+    // bought some titles individually gets credit for what they've
+    // already paid, so buying the bundle afterward never costs more in
+    // total than the bundle price itself — regardless of the order
+    // they bought things in. Without this, someone who bought 2 books
+    // individually (£5.98) then the full bundle (£10) would end up
+    // paying £15.98 total, MORE than a brand-new customer buying
+    // everything as singles (£14.95). That's the exact bug being fixed.
+    const [{ data: allTitles, error: titlesError }, { data: owned, error: ownedError }] = await Promise.all([
+      supabase.from('titles').select('id, price_cents').eq('is_published', true),
+      supabase.from('purchases').select('title_id').eq('user_id', user.id),
+    ]);
+    if (titlesError || !allTitles) return new Response('Failed to load titles', { status: 500, headers: corsHeaders });
+    if (ownedError) return new Response('Failed to load purchases', { status: 500, headers: corsHeaders });
+
+    const ownedIds = new Set((owned ?? []).map((p) => p.title_id));
+    if (ownedIds.size >= allTitles.length) {
+      return new Response('Already own the full library', { status: 400, headers: corsHeaders });
+    }
+
+    const alreadyPaid = allTitles
+      .filter((t) => ownedIds.has(t.id))
+      .reduce((sum, t) => sum + (t.price_cents || 0), 0);
+
+    const isDiscounted = alreadyPaid > 0;
+    const unitAmount = Math.max(MIN_CHARGE_CENTS, BUNDLE_PRICE_CENTS - alreadyPaid);
+    const productName = isDiscounted
+      ? `${BUNDLE_NAME} — Complete Your Collection`
+      : BUNDLE_NAME;
+
     const session = await stripe.checkout.sessions.create({
       mode: 'payment',
       line_items: [{
         price_data: {
           currency: 'gbp',
-          unit_amount: BUNDLE_PRICE_CENTS,
-          product_data: { name: BUNDLE_NAME },
+          unit_amount: unitAmount,
+          product_data: { name: productName },
         },
         quantity: 1,
       }],

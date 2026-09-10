@@ -1,7 +1,14 @@
 import { useState } from 'react';
 import { AuthGate } from './AuthGate.jsx';
 
-export function BundlePromo({ titles, isAnonymous, hasFullLibrary, onUnlock, loading, error, redirectPath, compact }) {
+// Mirrors the server's pricing exactly (see create-checkout-session)
+// so what's displayed always matches what Stripe will actually charge.
+// Kept in sync deliberately rather than fetched, since this is just for
+// display — the server is what actually enforces the real price.
+const BUNDLE_PRICE_CENTS = 1000; // £10.00
+const MIN_CHARGE_CENTS = 30; // £0.30, Stripe's documented GBP minimum
+
+export function BundlePromo({ titles, purchasedIds, isAnonymous, hasFullLibrary, onUnlock, loading, error, redirectPath, compact }) {
   const [wantsToUnlock, setWantsToUnlock] = useState(false);
 
   if (hasFullLibrary) {
@@ -15,10 +22,19 @@ export function BundlePromo({ titles, isAnonymous, hasFullLibrary, onUnlock, loa
     );
   }
 
-  const individualTotal = titles.reduce((sum, t) => sum + (t.price_cents || 0), 0);
-  const bundlePriceDisplay = '£10.00';
-  const individualTotalDisplay = `£${(individualTotal / 100).toFixed(2)}`;
-  const savingsDisplay = `£${((individualTotal - 1000) / 100).toFixed(2)}`;
+  const owned = titles.filter((t) => purchasedIds?.has(t.id));
+  const remaining = titles.filter((t) => !purchasedIds?.has(t.id));
+  const alreadyPaid = owned.reduce((sum, t) => sum + (t.price_cents || 0), 0);
+  const remainingIndividualTotal = remaining.reduce((sum, t) => sum + (t.price_cents || 0), 0);
+  const unitAmount = Math.max(MIN_CHARGE_CENTS, BUNDLE_PRICE_CENTS - alreadyPaid);
+  const hasCredit = alreadyPaid > 0;
+
+  const priceDisplay = `£${(unitAmount / 100).toFixed(2)}`;
+  const remainingIndividualDisplay = `£${(remainingIndividualTotal / 100).toFixed(2)}`;
+  const savingsCents = Math.max(0, remainingIndividualTotal - unitAmount);
+  const savingsDisplay = `£${(savingsCents / 100).toFixed(2)}`;
+  const label = hasCredit ? `Complete your collection — ${remaining.length} left` : 'Full Library';
+  const countLabel = hasCredit ? `the remaining ${remaining.length} book${remaining.length === 1 ? '' : 's'}` : `all ${titles.length} books`;
 
   const handleClick = () => {
     if (isAnonymous) { setWantsToUnlock(true); return; }
@@ -59,7 +75,9 @@ export function BundlePromo({ titles, isAnonymous, hasFullLibrary, onUnlock, loa
         >
           {loading
             ? 'Opening checkout…'
-            : `Unlock all ${titles.length} books — ${bundlePriceDisplay} (save ${savingsDisplay})`}
+            : savingsCents > 0
+            ? `Unlock ${countLabel} — ${priceDisplay} (save ${savingsDisplay})`
+            : `Unlock ${countLabel} — ${priceDisplay}`}
         </button>
         {error && <p style={{ fontSize: 12, color: 'var(--ember)', marginTop: 8 }}>{error}</p>}
       </div>
@@ -78,25 +96,34 @@ export function BundlePromo({ titles, isAnonymous, hasFullLibrary, onUnlock, loa
       </span>
       <div style={{ textAlign: 'center', paddingTop: 8 }}>
         <p style={{ fontFamily: "'Fraunces', serif", fontSize: 20, margin: '0 0 4px' }}>
-          Full Library
+          {label}
         </p>
         <p style={{ fontSize: 13, color: 'var(--ink-dim)', marginBottom: 16 }}>
-          Unlock all {titles.length} books completely
+          {hasCredit
+            ? `You already own ${owned.length} — unlock ${countLabel}`
+            : `Unlock ${countLabel} completely`}
         </p>
         <p style={{ margin: '0 0 4px' }}>
-          <span style={{ fontFamily: "'Fraunces', serif", fontSize: 32, fontWeight: 600 }}>{bundlePriceDisplay}</span>
+          <span style={{ fontFamily: "'Fraunces', serif", fontSize: 32, fontWeight: 600 }}>{priceDisplay}</span>
         </p>
-        <p style={{ fontSize: 13, color: 'var(--ink-dim)', marginBottom: 20 }}>
-          <span style={{ textDecoration: 'line-through' }}>{individualTotalDisplay}</span>
-          {' '}— save {savingsDisplay}
-        </p>
+        {savingsCents > 0 && (
+          <p style={{ fontSize: 13, color: 'var(--ink-dim)', marginBottom: 20 }}>
+            <span style={{ textDecoration: 'line-through' }}>{remainingIndividualDisplay}</span>
+            {' '}— save {savingsDisplay}
+          </p>
+        )}
+        {hasCredit && (
+          <p style={{ fontSize: 12, color: 'var(--violet)', marginBottom: 20 }}>
+            Credited {`£${(alreadyPaid / 100).toFixed(2)}`} for books you already own
+          </p>
+        )}
         <button
           className="choice-btn"
           style={{ background: 'var(--ember)', color: '#1f1408', borderLeft: 'none', textAlign: 'center', fontWeight: 600, width: '100%' }}
           onClick={handleClick}
           disabled={loading}
         >
-          {loading ? 'Opening checkout…' : `Unlock the full library — ${bundlePriceDisplay}`}
+          {loading ? 'Opening checkout…' : `Unlock ${countLabel} — ${priceDisplay}`}
         </button>
         {error && <p style={{ fontSize: 13, color: 'var(--ember)', marginTop: 12 }}>{error}</p>}
       </div>
