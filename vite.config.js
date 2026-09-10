@@ -9,8 +9,8 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['icon-192.png', 'icon-512.png'],
       manifest: {
-        name: 'Emberbound',
-        short_name: 'Emberbound',
+        name: 'Wovenfate',
+        short_name: 'Wovenfate',
         description: 'Choose how the story unfolds.',
         start_url: '/',
         scope: '/',

@@ -62,7 +62,7 @@ export async function generateEndingImage({ titleId, titleName, endingTag }) {
   ctx.fillStyle = '#ece4d6';
   ctx.font = "600 42px 'Fraunces', serif";
   ctx.textAlign = 'center';
-  ctx.fillText('Emberbound', W / 2, 300);
+  ctx.fillText('Wovenfate', W / 2, 300);
 
   // Cover art, large rounded card, center.
   const coverSrc = COVER_IMAGES[titleId];
@@ -116,7 +116,7 @@ export async function generateEndingImage({ titleId, titleName, endingTag }) {
   ctx.fillText('Choose how your story unfolds.', W / 2, H - 160);
   ctx.font = "600 38px 'Inter', sans-serif";
   ctx.fillStyle = '#ece4d6';
-  ctx.fillText('emberbound.app', W / 2, H - 100);
+  ctx.fillText('wovenfate.app', W / 2, H - 100);
 
   return new Promise((resolve) => canvas.toBlob(resolve, 'image/png'));
 }

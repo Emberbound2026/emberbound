@@ -1,4 +1,4 @@
-const STORAGE_KEY = 'emberbound-narration-position';
+const STORAGE_KEY = 'wovenfate-narration-position';
 
 // Segment position is per-device by the same reasoning as voice choice
 // (see useNarratorSettings) — it's tied to this device's specific text

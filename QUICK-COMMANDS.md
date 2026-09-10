@@ -1,9 +1,31 @@
-# Emberbound — Quick Commands
+# Wovenfate — Quick Commands
 
 Keep this open in a tab while working with Claude. Run everything from
 your actual project folder: the one with `package.json`, `.git`, and
 `node_modules` directly inside it —
-`C:\Users\Liam\Documents\Claude - Emberbound\emberbound-app\emberbound-app`
+`C:\Users\Liam\Documents\Claude - Wovenfate\wovenfate-app`
+
+(If you haven't renamed your local folders yet, see "One-time folder
+rename" below first — do that before using the path above.)
+
+---
+
+## One-time folder rename (do this once, now)
+
+Your local folders are still named for the old "Emberbound" branding.
+Renaming them keeps everything consistent going forward:
+
+1. Close any terminal/editor windows with the project open.
+2. In File Explorer, rename `Claude - Emberbound` → `Wovenfate`.
+3. Inside it, rename `emberbound-app` → `wovenfate-app` (there may be
+   a nested folder of the same name inside that one too — rename that
+   one as well, so you end up with `Wovenfate\wovenfate-app` containing
+   `package.json` directly).
+4. Update the path everywhere in this file if you chose different
+   names than above.
+
+Renaming folders doesn't break `.git` or `node_modules` — Windows
+handles that fine, no need to reinstall or re-clone anything.
 
 ---
 
@@ -17,7 +39,7 @@ your actual project folder: the one with `package.json`, `.git`, and
    ```
 3. From that exact extracted folder, copy the changes into your real project:
    ```powershell
-   robocopy . "C:\Users\Liam\Documents\Claude - Emberbound\emberbound-app\emberbound-app" /E /XD node_modules
+   robocopy . "C:\Users\Liam\Documents\Claude - Wovenfate\wovenfate-app" /E /XD node_modules
    ```
 4. Confirm it runs:
    ```

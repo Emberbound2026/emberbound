@@ -35,8 +35,8 @@ export function EndingModal({ titleId, titleName, endingTag }) {
       if (navigator.canShare && navigator.canShare({ files: [file] })) {
         await navigator.share({
           files: [file],
-          title: `My Emberbound ending — ${titleName}`,
-          text: `I just finished ${titleName} on Emberbound.`,
+          title: `My Wovenfate ending — ${titleName}`,
+          text: `I just finished ${titleName} on Wovenfate.`,
         });
       } else {
         const url = URL.createObjectURL(blob);

@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 
-const STORAGE_KEY = 'emberbound-narrator-settings';
+const STORAGE_KEY = 'wovenfate-narrator-settings';
 
 // Voice choices are saved by name, not index — the same voice can sit
 // at a different index depending on browser/OS/what's installed, so an

@@ -1,4 +1,4 @@
--- Emberbound — initial schema
+-- Wovenfate — initial schema
 -- Run this in the Supabase SQL editor (Project → SQL Editor → New query).
 
 -- ─── Titles ──────────────────────────────────────────────────────────

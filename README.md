@@ -1,4 +1,4 @@
-# Emberbound — Week 1 scaffold
+# Wovenfate — Week 1 scaffold
 
 React + Vite rebuild of the branching-story engine, multi-voice narration,
 and hands-free voice choices, ported from the single-file HTML prototype.
@@ -11,7 +11,7 @@ OS) — only two commands need a Windows-specific version:
 - **Install Node.js first** if you haven't: nodejs.org → LTS version →
   installer. This gives you `node` and `npm` in Command Prompt/PowerShell.
 - **Unzipping**: right-click the zip → "Extract All" in File Explorer,
-  or in PowerShell: `Expand-Archive emberbound-app.zip`. (The `unzip`
+  or in PowerShell: `Expand-Archive wovenfate-app.zip`. (The `unzip`
   command from the earlier instructions is a Linux/Mac thing.)
 - **Everything else** (`npm install`, `npm run dev`, `node supabase/seed.js`,
   `git` commands) — run exactly as written, in PowerShell, Command Prompt,
@@ -163,7 +163,7 @@ supabase link --project-ref <your-project-ref>
 **7. Set the function secrets** (these stay server-side, never in `.env.local`):
 ```
 supabase secrets set STRIPE_SECRET_KEY=sk_test_...
-supabase secrets set SITE_URL=https://emberbound.vercel.app
+supabase secrets set SITE_URL=https://wovenfate.vercel.app
 ```
 (`STRIPE_WEBHOOK_SECRET` comes in step 9, after Stripe gives it to you.)
 
@@ -194,7 +194,7 @@ supabase secrets set STRIPE_WEBHOOK_SECRET=whsec_...
 ### Landing page + account upgrade (this session)
 
 **Landing page:** the app no longer drops straight into Chapter 1. There's
-now a front screen (Emberbound brand, featured title, tagline) with a
+now a front screen (Wovenfate brand, featured title, tagline) with a
 "Start Reading" / "Continue Reading" button (the label itself tells you
 whether saved progress was found). It loads fast because it only queries
 the lightweight `titles` row — the full story text only fetches once you
@@ -210,8 +210,8 @@ automatically, no data migration involved.
 **One required Supabase setting** for the confirmation email's link to
 actually redirect back to your app instead of erroring:
 - Supabase dashboard → **Authentication** → **URL Configuration**
-- **Site URL:** `https://emberbound.vercel.app`
-- **Redirect URLs:** add both `https://emberbound.vercel.app/**` and
+- **Site URL:** `https://wovenfate.vercel.app`
+- **Redirect URLs:** add both `https://wovenfate.vercel.app/**` and
   `http://localhost:5173/**` (or whichever port your dev server uses) so
   the flow works in both production and local testing
 
@@ -425,7 +425,7 @@ via Canvas, no server/image-generation cost involved.
   image download
 
 **One thing worth doing before relying on this for real marketing
-reach:** the footer currently says "emberbound.app" as a placeholder
+reach:** the footer currently says "wovenfate.app" as a placeholder
 — worth replacing with your actual production domain once you have
 one, since that's the whole point of a shareable image driving new
 readers back to the app.
@@ -462,6 +462,51 @@ all five books at once — nothing book-specific needed.
 **To verify:** get any title to Chapter 4+ so there's real saved
 progress, reach an ending, click "Read again, choose differently" —
 should land on Chapter 1 and stay there.
+
+### Rebrand: Emberbound → Fatewoven → Wovenfate (this session)
+
+**The journey:** Emberbound collided with an actively published,
+similarly-themed interactive fiction game (itch.io/Steam, 4.9★).
+Fatewoven checked clean across 18+ search rounds and trademark mirrors
+— but a direct domain check (the thing that actually caught it, after
+search missed it entirely) turned up a small, live, identically-named
+RPG already running at fatewoven.app. Wovenfate — the same words,
+reversed — passed every check: search, trademark mirrors, and a direct
+fetch of the domain itself.
+
+**Domain confirmed owned:** wovenfate.app and wovenfate.co.uk are
+registered. wovenfate.com is held by someone else, but appears to be
+an unconfigured/parked registration (no HTTPS support at all — the
+signature of a domain nobody's actively running a product on), not a
+real competing product. `.app` is the better technical fit for a PWA
+anyway.
+
+**What changed in code** (already done, this pass): every remaining
+"Fatewoven" reference — app title, PWA manifest, `package.json`,
+landing page header, ending-share image wordmark/footer, localStorage
+keys, and the Stripe function's site-URL comment. The app icon (woven
+threads mark) needed no change — it represents the concept, not the
+word order, so it fits "Wovenfate" exactly as it fit "Fatewoven."
+
+**What still needs action from you, outside this codebase:**
+
+1. **Rename the Vercel project** — Settings → project name → this
+   changes the `*.vercel.app` URL itself.
+2. **Connect wovenfate.app as the custom domain** on Vercel once
+   you're ready to go live on it, rather than relying on the
+   `*.vercel.app` URL long-term.
+3. **Update the SITE_URL secret** to match whichever URL is live:
+   ```
+   supabase secrets set SITE_URL=https://your-live-url-here
+   ```
+   No redeploy needed — takes effect immediately.
+4. **Rename the GitHub repo** (optional but recommended).
+5. **Rename your local project folders** — see the "One-time folder
+   rename" section at the top of `QUICK-COMMANDS.md` for exact steps.
+
+**To verify the code side:** `npm run dev`, confirm the browser tab
+and landing page both say "Wovenfate," and generate a share image on
+any ending to confirm it says "Wovenfate" / "wovenfate.app."
 
 ### Deploy to Vercel
 

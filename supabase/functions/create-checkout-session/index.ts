@@ -11,7 +11,7 @@ const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY')!, {
   apiVersion: '2024-06-20',
 });
 
-const siteUrl = Deno.env.get('SITE_URL')!; // e.g. https://emberbound.vercel.app
+const siteUrl = Deno.env.get('SITE_URL')!; // e.g. https://wovenfate.vercel.app
 
 // Required because this function is called directly from the browser —
 // without these headers, the browser's CORS preflight (an automatic

@@ -78,11 +78,11 @@ export default function App() {
   if (loadError) {
     return (
       <>
-        <AppHeader title="Emberbound" />
+        <AppHeader title="Wovenfate" />
         <div className="app-content">
           <div className="page">
             <p className="story-text">
-              Couldn't load Emberbound ({loadError.message}). Check your Supabase
+              Couldn't load Wovenfate ({loadError.message}). Check your Supabase
               connection and try refreshing.
             </p>
           </div>
@@ -95,7 +95,7 @@ export default function App() {
     if (!catalog || authLoading) {
       return (
         <>
-          <AppHeader title="Emberbound" />
+          <AppHeader title="Wovenfate" />
           <div className="app-content">
             <div className="page"><p className="story-text">Loading…</p></div>
           </div>
@@ -104,7 +104,7 @@ export default function App() {
     }
     return (
       <>
-        <AppHeader title="Emberbound" />
+        <AppHeader title="Wovenfate" />
         <div className="app-content">
           <LandingPage
             titles={catalog}
@@ -120,7 +120,7 @@ export default function App() {
   if (!titleData || authLoading || !resumeReady || purchase.isUnlocked === undefined) {
     return (
       <>
-        <AppHeader title="Emberbound" onBack={handleBackToLanding} />
+        <AppHeader title="Wovenfate" onBack={handleBackToLanding} />
         <div className="app-content">
           <div className="page"><p className="story-text">Loading…</p></div>
         </div>
