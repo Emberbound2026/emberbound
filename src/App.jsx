@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { fetchTitle, fetchCatalog, fetchInProgressTitleIds } from './data/supabaseClient.js';
+import { fetchTitle, fetchCatalog, fetchInProgressTitleIds, fetchPurchasedTitleIds } from './data/supabaseClient.js';
 import { useAuth } from './engine/useAuth.js';
 import { useReadingProgress } from './engine/useReadingProgress.js';
 import { useStoryEngine } from './engine/useStoryEngine.js';
@@ -34,6 +34,7 @@ export default function App() {
 
   const [catalog, setCatalog] = useState(null);
   const [inProgressIds, setInProgressIds] = useState(new Set());
+  const [purchasedIds, setPurchasedIds] = useState(new Set());
   const [titleData, setTitleData] = useState(null);
   const [loadError, setLoadError] = useState(null);
 
@@ -55,6 +56,15 @@ export default function App() {
     return () => { cancelled = true; };
   }, [user?.id]);
 
+  useEffect(() => {
+    if (!user?.id) return;
+    let cancelled = false;
+    fetchPurchasedTitleIds(user.id)
+      .then((ids) => { if (!cancelled) setPurchasedIds(ids); })
+      .catch((err) => console.error('Failed to load purchased list:', err.message));
+    return () => { cancelled = true; };
+  }, [user?.id]);
+
   // Full story text only loads once a title is actually selected.
   useEffect(() => {
     if (!selectedTitleId) { setTitleData(null); return; }
@@ -68,6 +78,12 @@ export default function App() {
   const { initialProgress, saveProgress } = useReadingProgress(user?.id, selectedTitleId);
   const purchase = usePurchase(user?.id, selectedTitleId);
   const bundle = useBundlePurchase(user?.id, catalog?.length);
+
+  useEffect(() => {
+    if (bundle.hasFullLibrary && user?.id) {
+      fetchPurchasedTitleIds(user.id).then(setPurchasedIds).catch(() => {});
+    }
+  }, [bundle.hasFullLibrary, user?.id]);
 
   // If the reader hit the auth gate mid-purchase, verified their email,
   // and landed back here, resume the checkout automatically instead of
@@ -102,6 +118,7 @@ export default function App() {
     // label is correct if the reader picks a title again this session.
     if (user?.id) {
       fetchInProgressTitleIds(user.id).then(setInProgressIds).catch(() => {});
+      fetchPurchasedTitleIds(user.id).then(setPurchasedIds).catch(() => {});
     }
   }, [user?.id]);
 
@@ -142,6 +159,7 @@ export default function App() {
           <LandingPage
             titles={catalog}
             inProgressIds={inProgressIds}
+            purchasedIds={purchasedIds}
             onSelect={setSelectedTitleId}
             isAnonymous={isAnonymous}
           />

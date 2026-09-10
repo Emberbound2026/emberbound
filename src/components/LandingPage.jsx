@@ -2,9 +2,10 @@ import { useState } from 'react';
 import { COVER_IMAGES } from '../data/covers.js';
 import { AuthGate } from './AuthGate.jsx';
 
-function CatalogCard({ title, hasProgress, onSelect }) {
+function CatalogCard({ title, hasProgress, isPurchased, onSelect }) {
   const cover = COVER_IMAGES[title.id];
   const priceDisplay = title.price_cents ? `£${(title.price_cents / 100).toFixed(2)}` : '';
+  const metaText = isPurchased ? 'Purchased' : hasProgress ? 'In progress' : `Free start · ${priceDisplay}`;
   return (
     <button className="hscroll-card" onClick={() => onSelect(title.id)}>
       <div className="hscroll-cover">
@@ -12,12 +13,12 @@ function CatalogCard({ title, hasProgress, onSelect }) {
         {hasProgress && <span className="hscroll-progress-badge">Continue</span>}
       </div>
       <p className="hscroll-title">{title.name}</p>
-      <p className="hscroll-meta">{hasProgress ? 'In progress' : `Free start · ${priceDisplay}`}</p>
+      <p className="hscroll-meta">{metaText}</p>
     </button>
   );
 }
 
-export function LandingPage({ titles, inProgressIds, onSelect, isAnonymous }) {
+export function LandingPage({ titles, inProgressIds, purchasedIds, onSelect, isAnonymous }) {
   const [signInOpen, setSignInOpen] = useState(false);
   const inProgress = titles.filter((t) => inProgressIds.has(t.id));
   const discover = titles;
@@ -76,7 +77,7 @@ export function LandingPage({ titles, inProgressIds, onSelect, isAnonymous }) {
           <h2 className="catalog-section-title">Continue Reading</h2>
           <div className="hscroll">
             {inProgress.map((title) => (
-              <CatalogCard key={title.id} title={title} hasProgress onSelect={onSelect} />
+              <CatalogCard key={title.id} title={title} hasProgress isPurchased={purchasedIds.has(title.id)} onSelect={onSelect} />
             ))}
           </div>
         </div>
@@ -92,6 +93,7 @@ export function LandingPage({ titles, inProgressIds, onSelect, isAnonymous }) {
               key={title.id}
               title={title}
               hasProgress={inProgressIds.has(title.id)}
+              isPurchased={purchasedIds.has(title.id)}
               onSelect={onSelect}
             />
           ))}

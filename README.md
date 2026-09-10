@@ -668,6 +668,25 @@ email verification, and confirm checkout starts automatically on
 return (no extra click) — then confirm every title shows unlocked
 afterward, not just the one you were reading.
 
+### "Purchased" status on catalog cards (this session)
+
+Catalog cards now show **Purchased** in place of the price once a
+title's actually been bought — takes priority over "In progress,"
+which takes priority over the default "Free start · £X.XX." Mirrors
+the exact same `fetchInProgressTitleIds` pattern already used for
+reading progress, just for the `purchases` table instead.
+
+Refreshes on: returning to the landing page (same refresh point as
+reading progress), and separately when a bundle purchase completes —
+since a bundle can redirect straight to the landing page with no
+specific title to navigate "back" from, that path needed its own
+refresh trigger tied to `bundle.hasFullLibrary` confirming.
+
+**To verify:** purchase any single title, return to landing — that
+card should say "Purchased." Purchase the bundle — all 5 should
+update, including if the bundle redirect lands you straight on the
+landing page rather than back at a specific book.
+
 ### Deploy to Vercel
 
 1. Push this project to a GitHub repo.
