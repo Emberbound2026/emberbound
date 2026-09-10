@@ -33,7 +33,7 @@ export function Paywall({ title, titleId, isAnonymous, onUnlock, loading, error 
           <AuthGate
             heading="Create a free account to continue"
             description="This keeps your purchase safe — it can't be lost even if you clear your browser or switch devices. No password needed."
-            redirectPath={`/?title=${titleId}`}
+            redirectPath={`/?title=${titleId}&autoPurchase=single`}
           />
           <button
             onClick={() => setWantsToUnlock(false)}

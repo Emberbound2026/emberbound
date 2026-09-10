@@ -633,6 +633,41 @@ supabase functions deploy stripe-webhook
 6. Revisit the landing page → bundle promo should now say "You own the
    full library" instead of showing the upsell again
 
+### Three fixes from real-world testing (this session)
+
+**1. Bundle purchase wasn't unlocking anything, despite Stripe showing
+success.** Real root cause, not a code bug this time: the *deployed*
+webhook function was still running the old pre-bundle code (my earlier
+CLI-deploy instructions weren't followed through, or didn't fully
+apply — either way, confirmed and fixed directly by redeploying via the
+connected Supabase tool this time). The old webhook saw
+`type: 'bundle'` metadata with no `title_id`, treated that as an
+error, and silently returned without writing anything — Stripe
+genuinely charged (test mode), nothing ever got unlocked. Verify the
+correct version is live any time you're unsure:
+Supabase dashboard → Edge Functions → stripe-webhook → check it
+references `type === 'bundle'` in the code.
+
+**2. Confusing extra click after email verification.** Previously,
+verifying your email brought you back to the *same* paywall screen,
+requiring a second click on "Unlock" to actually start checkout.
+Fixed: the redirect now carries an `autoPurchase` marker (`single` or
+`bundle`), and once the reader is confirmed signed in, checkout starts
+automatically — no second click needed. Applies to both single-title
+and bundle purchases, from both the landing page and the paywall.
+
+**3. Bundle option looked like a subtle text link, not a real choice.**
+The compact paywall upsell is now a proper secondary button (ember
+outline, matching the primary unlock button's shape) rather than
+small underlined text — meant to actually draw the eye as a real
+option, not a footnote.
+
+**To verify all three:** as a fresh guest, hit any paywall, click the
+new bundle button (should look like a real button now), go through
+email verification, and confirm checkout starts automatically on
+return (no extra click) — then confirm every title shows unlocked
+afterward, not just the one you were reading.
+
 ### Deploy to Vercel
 
 1. Push this project to a GitHub repo.

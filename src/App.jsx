@@ -69,6 +69,32 @@ export default function App() {
   const purchase = usePurchase(user?.id, selectedTitleId);
   const bundle = useBundlePurchase(user?.id, catalog?.length);
 
+  // If the reader hit the auth gate mid-purchase, verified their email,
+  // and landed back here, resume the checkout automatically instead of
+  // making them find and click "Unlock" a second time — that extra step
+  // is exactly the kind of thing that reads as broken even though
+  // nothing's actually wrong, just an avoidable bit of friction.
+  const autoPurchaseRef = useRef(false);
+  useEffect(() => {
+    if (autoPurchaseRef.current) return;
+    if (authLoading || isAnonymous) return;
+    const params = new URLSearchParams(window.location.search);
+    const autoPurchase = params.get('autoPurchase');
+    if (!autoPurchase) return;
+
+    autoPurchaseRef.current = true;
+    const url = new URL(window.location.href);
+    url.searchParams.delete('autoPurchase');
+    window.history.replaceState({}, '', url.pathname + url.search);
+
+    if (autoPurchase === 'bundle') {
+      bundle.startBundleCheckout();
+    } else if (autoPurchase === 'single' && selectedTitleId) {
+      purchase.startCheckout();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [authLoading, isAnonymous, selectedTitleId]);
+
   const handleBackToLanding = useCallback(() => {
     setSelectedTitleId(null);
     setTitleData(null);
@@ -127,7 +153,7 @@ export default function App() {
               onUnlock={bundle.startBundleCheckout}
               loading={bundle.checkoutLoading}
               error={bundle.checkoutError}
-              redirectPath="/"
+              redirectPath="/?autoPurchase=bundle"
             />
           </div>
         </div>
@@ -326,7 +352,7 @@ function StoryReader({ title, story, resumeFrom, onProgressChange, purchase, bun
                 onUnlock={bundle.startBundleCheckout}
                 loading={bundle.checkoutLoading}
                 error={bundle.checkoutError}
-                redirectPath={`/?title=${title.id}`}
+                redirectPath={`/?title=${title.id}&autoPurchase=bundle`}
                 compact
               />
             </>

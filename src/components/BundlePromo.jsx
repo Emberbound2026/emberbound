@@ -50,9 +50,16 @@ export function BundlePromo({ titles, isAnonymous, hasFullLibrary, onUnlock, loa
         <button
           onClick={handleClick}
           disabled={loading}
-          style={{ background: 'none', border: 'none', color: 'var(--violet)', fontSize: 13, textDecoration: 'underline', cursor: 'pointer', padding: 0 }}
+          className="choice-btn"
+          style={{
+            width: '100%', textAlign: 'center', fontWeight: 600,
+            background: 'transparent', borderLeft: '3px solid var(--ember)',
+            color: 'var(--ember)',
+          }}
         >
-          {loading ? 'Opening checkout…' : `Or unlock all ${titles.length} books for ${bundlePriceDisplay} — save ${savingsDisplay}`}
+          {loading
+            ? 'Opening checkout…'
+            : `Unlock all ${titles.length} books — ${bundlePriceDisplay} (save ${savingsDisplay})`}
         </button>
         {error && <p style={{ fontSize: 12, color: 'var(--ember)', marginTop: 8 }}>{error}</p>}
       </div>
